@@ -64,19 +64,36 @@ function CampaignDetail() {
 
   const handleDonate = async (e) => {
     e.preventDefault()
+    
+    // Validate amount
+    const amount = parseFloat(donationAmount)
+    if (!amount || amount <= 0) {
+      alert(t('campaign.donation.invalidAmount', 'Please enter a valid donation amount.'))
+      return
+    }
+
     setProcessing(true)
 
     try {
       const response = await api.post('/donations/create_checkout_session/', {
         campaign_id: parseInt(id),
-        amount: parseFloat(donationAmount),
+        amount: amount,
       })
 
-      // Redirect to Stripe Checkout
-      window.location.href = response.data.url
+      // Check if response has URL
+      if (response.data && response.data.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = response.data.url
+      } else {
+        throw new Error('No checkout URL received from server')
+      }
     } catch (error) {
       console.error('Error creating checkout session:', error)
-      alert(t('common.donationError'))
+      const errorMessage = error.response?.data?.error || 
+                          error.response?.data?.detail || 
+                          error.message || 
+                          t('campaign.donation.error', 'Failed to create donation session. Please try again.')
+      alert(errorMessage)
       setProcessing(false)
     }
   }
@@ -185,14 +202,18 @@ function CampaignDetail() {
                 <p className="donation-note">{t('campaign.anonymousDonations')}</p>
                 <input
                   type="number"
-                  placeholder={t('common.placeholder')}
+                  placeholder={t('campaign.donation.amountPlaceholder', 'Enter amount in USD')}
                   value={donationAmount}
                   onChange={(e) => setDonationAmount(e.target.value)}
                   required
                   min="1"
                   step="0.01"
                 />
-                <button type="submit" className="btn-donate" disabled={processing}>
+                <button 
+                  type="submit" 
+                  className="btn-donate" 
+                  disabled={processing || !donationAmount || parseFloat(donationAmount || 0) <= 0}
+                >
                   {processing ? t('campaign.processing') : t('campaign.donate')}
                 </button>
               </form>
