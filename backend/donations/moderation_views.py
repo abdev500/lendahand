@@ -14,17 +14,21 @@ def is_moderator(user):
 
 def moderation_login_required(view_func):
     """Decorator that supports both session and token authentication."""
+
     def wrapper(request, *args, **kwargs):
         # Check if user is authenticated and is moderator
         if not request.user.is_authenticated:
             messages.error(request, "You must be logged in to access this page.")
             return redirect("/login/")
-        
+
         if not is_moderator(request.user):
-            messages.error(request, "You must be a moderator or staff member to access this page.")
+            messages.error(
+                request, "You must be a moderator or staff member to access this page."
+            )
             return redirect("/login/")
-        
+
         return view_func(request, *args, **kwargs)
+
     return wrapper
 
 
@@ -32,16 +36,27 @@ def moderation_login_required(view_func):
 def moderation_dashboard(request):
     """Moderation dashboard for reviewing campaigns."""
     # Force evaluation of queryset to ensure data is available
-    pending_campaigns = list(Campaign.objects.filter(status="pending").order_by("-created_at"))
-    approved_campaigns = list(Campaign.objects.filter(status="approved").order_by("-created_at")[:10])
-    rejected_campaigns = list(Campaign.objects.filter(status="rejected").order_by("-created_at")[:10])
+    pending_campaigns = list(
+        Campaign.objects.filter(status="pending").order_by("-created_at")
+    )
+    approved_campaigns = list(
+        Campaign.objects.filter(status="approved").order_by("-created_at")[:10]
+    )
+    rejected_campaigns = list(
+        Campaign.objects.filter(status="rejected").order_by("-created_at")[:10]
+    )
 
     # Debug: Log what we're passing to template
     import logging
+
     logger = logging.getLogger(__name__)
     logger.info(f"Pending campaigns count: {len(pending_campaigns)}")
-    logger.info(f"User: {request.user.email if request.user.is_authenticated else 'Not authenticated'}")
-    logger.info(f"Is moderator: {request.user.is_moderator if request.user.is_authenticated else False}")
+    logger.info(
+        f"User: {request.user.email if request.user.is_authenticated else 'Not authenticated'}"
+    )
+    logger.info(
+        f"Is moderator: {request.user.is_moderator if request.user.is_authenticated else False}"
+    )
 
     context = {
         "pending_campaigns": pending_campaigns,
@@ -66,13 +81,17 @@ def moderate_campaign(request, campaign_id, action):
         campaign.status = "approved"
         campaign.moderation_notes = notes
         campaign.save()
-        ModerationHistory.objects.create(campaign=campaign, moderator=request.user, action="approve", notes=notes)
+        ModerationHistory.objects.create(
+            campaign=campaign, moderator=request.user, action="approve", notes=notes
+        )
         messages.success(request, f'Campaign "{campaign.title}" has been approved.')
     elif action == "reject":
         campaign.status = "rejected"
         campaign.moderation_notes = notes
         campaign.save()
-        ModerationHistory.objects.create(campaign=campaign, moderator=request.user, action="reject", notes=notes)
+        ModerationHistory.objects.create(
+            campaign=campaign, moderator=request.user, action="reject", notes=notes
+        )
         messages.success(request, f'Campaign "{campaign.title}" has been rejected.')
 
     return redirect("moderation:dashboard")
@@ -85,7 +104,9 @@ def user_management(request):
     search_query = request.GET.get("search", "")
 
     if search_query:
-        users = users.filter(Q(email__icontains=search_query) | Q(username__icontains=search_query))
+        users = users.filter(
+            Q(email__icontains=search_query) | Q(username__icontains=search_query)
+        )
 
     context = {
         "users": users,
@@ -116,5 +137,8 @@ def toggle_news(request, news_id):
     if request.method == "POST":
         news.published = not news.published
         news.save()
-        messages.success(request, f'News "{news.title}" has been {"published" if news.published else "unpublished"}.')
+        messages.success(
+            request,
+            f'News "{news.title}" has been {"published" if news.published else "unpublished"}.',
+        )
     return redirect("moderation:news")

@@ -20,9 +20,22 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="User",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("password", models.CharField(max_length=128, verbose_name="password")),
-                ("last_login", models.DateTimeField(blank=True, null=True, verbose_name="last login")),
+                (
+                    "last_login",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="last login"
+                    ),
+                ),
                 (
                     "is_superuser",
                     models.BooleanField(
@@ -34,16 +47,30 @@ class Migration(migrations.Migration):
                 (
                     "username",
                     models.CharField(
-                        error_messages={"unique": "A user with that username already exists."},
+                        error_messages={
+                            "unique": "A user with that username already exists."
+                        },
                         help_text="Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.",
                         max_length=150,
                         unique=True,
-                        validators=[django.contrib.auth.validators.UnicodeUsernameValidator()],
+                        validators=[
+                            django.contrib.auth.validators.UnicodeUsernameValidator()
+                        ],
                         verbose_name="username",
                     ),
                 ),
-                ("first_name", models.CharField(blank=True, max_length=150, verbose_name="first name")),
-                ("last_name", models.CharField(blank=True, max_length=150, verbose_name="last name")),
+                (
+                    "first_name",
+                    models.CharField(
+                        blank=True, max_length=150, verbose_name="first name"
+                    ),
+                ),
+                (
+                    "last_name",
+                    models.CharField(
+                        blank=True, max_length=150, verbose_name="last name"
+                    ),
+                ),
                 (
                     "is_staff",
                     models.BooleanField(
@@ -60,9 +87,22 @@ class Migration(migrations.Migration):
                         verbose_name="active",
                     ),
                 ),
-                ("date_joined", models.DateTimeField(default=django.utils.timezone.now, verbose_name="date joined")),
-                ("email", models.EmailField(max_length=254, unique=True, verbose_name="email address")),
-                ("phone", models.CharField(blank=True, max_length=20, verbose_name="phone")),
+                (
+                    "date_joined",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, verbose_name="date joined"
+                    ),
+                ),
+                (
+                    "email",
+                    models.EmailField(
+                        max_length=254, unique=True, verbose_name="email address"
+                    ),
+                ),
+                (
+                    "phone",
+                    models.CharField(blank=True, max_length=20, verbose_name="phone"),
+                ),
                 ("address", models.TextField(blank=True, verbose_name="address")),
                 ("is_moderator", models.BooleanField(default=False)),
                 (
@@ -99,12 +139,23 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Campaign",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("title", models.CharField(max_length=200)),
                 ("short_description", models.TextField()),
                 ("description", models.TextField()),
                 ("target_amount", models.DecimalField(decimal_places=2, max_digits=10)),
-                ("current_amount", models.DecimalField(decimal_places=2, default=0, max_digits=10)),
+                (
+                    "current_amount",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=10),
+                ),
                 (
                     "status",
                     models.CharField(
@@ -139,7 +190,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="News",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("title", models.CharField(default="", max_length=200)),
                 ("content", models.TextField(default="")),
                 ("image", models.ImageField(blank=True, upload_to="news/")),
@@ -154,7 +213,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="ModerationHistory",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("action", models.CharField(max_length=20)),
                 ("notes", models.TextField(blank=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -169,7 +236,9 @@ class Migration(migrations.Migration):
                 (
                     "moderator",
                     models.ForeignKey(
-                        null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
                     ),
                 ),
             ],
@@ -180,17 +249,30 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Donation",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("amount", models.DecimalField(decimal_places=2, max_digits=10)),
                 ("donor_name", models.CharField(blank=True, max_length=100)),
                 ("donor_email", models.EmailField(blank=True, max_length=254)),
                 ("is_anonymous", models.BooleanField(default=True)),
-                ("stripe_payment_intent_id", models.CharField(max_length=200, unique=True)),
+                (
+                    "stripe_payment_intent_id",
+                    models.CharField(max_length=200, unique=True),
+                ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
                     "campaign",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, related_name="donations", to="donations.campaign"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="donations",
+                        to="donations.campaign",
                     ),
                 ),
             ],
@@ -201,15 +283,30 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="CampaignMedia",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("media_type", models.CharField(choices=[("image", "Image"), ("video", "Video")], max_length=10)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "media_type",
+                    models.CharField(
+                        choices=[("image", "Image"), ("video", "Video")], max_length=10
+                    ),
+                ),
                 ("file", models.FileField(upload_to="campaigns/")),
                 ("order", models.IntegerField(default=0)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
                     "campaign",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, related_name="media", to="donations.campaign"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="media",
+                        to="donations.campaign",
                     ),
                 ),
             ],

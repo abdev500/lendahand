@@ -153,25 +153,78 @@ class Command(BaseCommand):
                 "support_1.jpg",
                 "support_2.jpg",
             ],
-            "Ukrainian Refugee Relief Fund": ["refugee_1.jpg", "refugee_2.jpg", "refugee_3.jpg", "refugee_4.jpg"],
-            "Medical Equipment for Hospitals": ["medical_1.jpg", "medical_2.jpg", "medical_3.jpg", "medical_4.jpg"],
-            "Education Support Program": ["education_1.jpg", "education_2.jpg", "education_3.jpg", "education_4.jpg"],
-            "Emergency Food Distribution": ["food_1.jpg", "food_2.jpg", "food_3.jpg", "food_4.jpg"],
-            "Mental Health Support": ["support_1.jpg", "support_2.jpg", "support_3.jpg", "support_4.jpg"],
-            "Winter Clothing Drive": ["humanitarian_3.jpg", "humanitarian_4.jpg", "support_3.jpg", "support_4.jpg"],
-            "Children's Safety Fund": ["support_1.jpg", "support_2.jpg", "support_3.jpg", "humanitarian_1.jpg"],
-            "Legal Aid Services": ["support_2.jpg", "support_3.jpg", "humanitarian_2.jpg", "humanitarian_3.jpg"],
-            "Transportation Assistance": ["refugee_2.jpg", "refugee_3.jpg", "support_1.jpg", "support_4.jpg"],
+            "Ukrainian Refugee Relief Fund": [
+                "refugee_1.jpg",
+                "refugee_2.jpg",
+                "refugee_3.jpg",
+                "refugee_4.jpg",
+            ],
+            "Medical Equipment for Hospitals": [
+                "medical_1.jpg",
+                "medical_2.jpg",
+                "medical_3.jpg",
+                "medical_4.jpg",
+            ],
+            "Education Support Program": [
+                "education_1.jpg",
+                "education_2.jpg",
+                "education_3.jpg",
+                "education_4.jpg",
+            ],
+            "Emergency Food Distribution": [
+                "food_1.jpg",
+                "food_2.jpg",
+                "food_3.jpg",
+                "food_4.jpg",
+            ],
+            "Mental Health Support": [
+                "support_1.jpg",
+                "support_2.jpg",
+                "support_3.jpg",
+                "support_4.jpg",
+            ],
+            "Winter Clothing Drive": [
+                "humanitarian_3.jpg",
+                "humanitarian_4.jpg",
+                "support_3.jpg",
+                "support_4.jpg",
+            ],
+            "Children's Safety Fund": [
+                "support_1.jpg",
+                "support_2.jpg",
+                "support_3.jpg",
+                "humanitarian_1.jpg",
+            ],
+            "Legal Aid Services": [
+                "support_2.jpg",
+                "support_3.jpg",
+                "humanitarian_2.jpg",
+                "humanitarian_3.jpg",
+            ],
+            "Transportation Assistance": [
+                "refugee_2.jpg",
+                "refugee_3.jpg",
+                "support_1.jpg",
+                "support_4.jpg",
+            ],
         }
 
         # Create campaigns
         for idx, campaign_data in enumerate(campaigns_data):
-            campaign, created = Campaign.objects.get_or_create(title=campaign_data["title"], defaults=campaign_data)
+            campaign, created = Campaign.objects.get_or_create(
+                title=campaign_data["title"], defaults=campaign_data
+            )
 
             # Get appropriate images for this campaign
             campaign_title = campaign_data["title"]
             image_list = image_categories.get(
-                campaign_title, ["humanitarian_1.jpg", "humanitarian_2.jpg", "humanitarian_3.jpg", "support_1.jpg"]
+                campaign_title,
+                [
+                    "humanitarian_1.jpg",
+                    "humanitarian_2.jpg",
+                    "humanitarian_3.jpg",
+                    "support_1.jpg",
+                ],
             )
 
             # Check if campaign already has media, if not add some
@@ -196,13 +249,20 @@ class Command(BaseCommand):
                             media = CampaignMedia(
                                 campaign=campaign,
                                 media_type="image",
-                                file=File(img_file, name=f"{campaign.id}_{order}_{image_filename}"),
+                                file=File(
+                                    img_file,
+                                    name=f"{campaign.id}_{order}_{image_filename}",
+                                ),
                                 order=order,
                             )
                             media.save()
                     else:
                         # Fallback: create a simple colored image if file doesn't exist
-                        self.stdout.write(self.style.WARNING(f"Image not found: {image_filename}, using placeholder"))
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"Image not found: {image_filename}, using placeholder"
+                            )
+                        )
                         img = Image.new("RGB", (800, 600), color=(214, 40, 40))
                         img_io = BytesIO()
                         img.save(img_io, format="JPEG")
@@ -211,14 +271,18 @@ class Command(BaseCommand):
                         media = CampaignMedia(
                             campaign=campaign,
                             media_type="image",
-                            file=File(img_io, name=f"campaign_{campaign.id}_image_{order}.jpg"),
+                            file=File(
+                                img_io, name=f"campaign_{campaign.id}_image_{order}.jpg"
+                            ),
                             order=order,
                         )
                         media.save()
 
                 action = "Created" if created else "Updated"
                 self.stdout.write(
-                    self.style.SUCCESS(f"{action} campaign: {campaign.title} with {len(selected_images)} images")
+                    self.style.SUCCESS(
+                        f"{action} campaign: {campaign.title} with {len(selected_images)} images"
+                    )
                 )
 
         # Sample news data with translations for all languages
@@ -249,7 +313,12 @@ class Command(BaseCommand):
                 "title_uk": "Звіт про вплив 2024: Робимо різницю",
                 "content_uk": "<p>Ми пишаємося тим, що можемо поділитися нашим Звітом про вплив 2024, демонструючи неймовірну різницю, яку ваші пожертвування внесли цього року.</p><p><strong>Ключові досягнення:</strong></p><ul><li>Понад $500,000 зібрано по всіх кампаніях</li><li>Підтримано понад 5,000 сімей</li><li>Надано медичну допомогу більш ніж 2,000 осіб</li><li>Допомогли 1,500 дітям продовжити навчання</li></ul><p>Дякуємо всім нашим донорам за їхню щедрість і підтримку. Разом ми змінюємо життя.</p>",
                 "published": True,
-                "images": ["support_1.jpg", "support_2.jpg", "humanitarian_3.jpg", "humanitarian_4.jpg"],
+                "images": [
+                    "support_1.jpg",
+                    "support_2.jpg",
+                    "humanitarian_3.jpg",
+                    "humanitarian_4.jpg",
+                ],
             },
             {
                 "title_en": "New Humanitarian Aid Campaign Launched",
@@ -277,7 +346,12 @@ class Command(BaseCommand):
                 "title_uk": "Програма підтримки освіти досягла важливої віхи",
                 "content_uk": "<p>Наша програма підтримки освіти досягла неймовірної віхи - ми допомогли більш ніж 1,500 дітям продовжити навчання, незважаючи на переміщення.</p><p>Програма надає навчальні матеріали, книги, шкільні приналежності та онлайн-ресурси для навчання дітям, які були змушені залишити свої школи.</p><p>Освіта - це основне право, і ваші пожертвування гарантують, що діти не втратять свій шанс вчитися і рости.</p><p>Дякуємо всім, хто підтримав цю важливу ініціативу!</p>",
                 "published": True,
-                "images": ["education_1.jpg", "education_2.jpg", "education_3.jpg", "education_4.jpg"],
+                "images": [
+                    "education_1.jpg",
+                    "education_2.jpg",
+                    "education_3.jpg",
+                    "education_4.jpg",
+                ],
             },
             {
                 "title_en": "Winter Aid Campaign: Providing Warmth and Hope",
@@ -297,11 +371,33 @@ class Command(BaseCommand):
 
         # Image mapping for news articles (can reuse campaign images)
         news_image_categories = {
-            "Lend a Hand Platform Launch": ["humanitarian_1.jpg", "humanitarian_2.jpg", "support_1.jpg"],
-            "Impact Report 2024: Making a Difference": ["support_1.jpg", "support_2.jpg", "humanitarian_3.jpg", "humanitarian_4.jpg"],
-            "New Humanitarian Aid Campaign Launched": ["food_1.jpg", "food_2.jpg", "humanitarian_2.jpg"],
-            "Education Support Program Reaches Milestone": ["education_1.jpg", "education_2.jpg", "education_3.jpg", "education_4.jpg"],
-            "Winter Aid Campaign: Providing Warmth and Hope": ["humanitarian_3.jpg", "humanitarian_4.jpg", "support_3.jpg"],
+            "Lend a Hand Platform Launch": [
+                "humanitarian_1.jpg",
+                "humanitarian_2.jpg",
+                "support_1.jpg",
+            ],
+            "Impact Report 2024: Making a Difference": [
+                "support_1.jpg",
+                "support_2.jpg",
+                "humanitarian_3.jpg",
+                "humanitarian_4.jpg",
+            ],
+            "New Humanitarian Aid Campaign Launched": [
+                "food_1.jpg",
+                "food_2.jpg",
+                "humanitarian_2.jpg",
+            ],
+            "Education Support Program Reaches Milestone": [
+                "education_1.jpg",
+                "education_2.jpg",
+                "education_3.jpg",
+                "education_4.jpg",
+            ],
+            "Winter Aid Campaign: Providing Warmth and Hope": [
+                "humanitarian_3.jpg",
+                "humanitarian_4.jpg",
+                "support_3.jpg",
+            ],
         }
 
         # Create news entries
@@ -310,10 +406,11 @@ class Command(BaseCommand):
             title_en = news_data["title_en"]
             content_en = news_data.get("content_en", "")
             news, created = News.objects.get_or_create(
-                title=title_en, defaults={
+                title=title_en,
+                defaults={
                     "content": content_en,
-                    "published": news_data.get("published", True)
-                }
+                    "published": news_data.get("published", True),
+                },
             )
 
             # Update if news exists but content is different
@@ -329,10 +426,18 @@ class Command(BaseCommand):
             selected_images = []
             if created or existing_media_count == 0:
                 # Get images for this news article
-                image_list = news_data.get("images", news_image_categories.get(title_en, ["humanitarian_1.jpg", "humanitarian_2.jpg", "support_1.jpg"]))
-                
+                image_list = news_data.get(
+                    "images",
+                    news_image_categories.get(
+                        title_en,
+                        ["humanitarian_1.jpg", "humanitarian_2.jpg", "support_1.jpg"],
+                    ),
+                )
+
                 # Select images (use all provided or random sample)
-                selected_images = image_list[:min(len(image_list), 4)]  # Max 4 images for news
+                selected_images = image_list[
+                    : min(len(image_list), 4)
+                ]  # Max 4 images for news
 
                 # Create NewsMedia entries for each image
                 for idx, image_filename in enumerate(selected_images):
@@ -343,13 +448,20 @@ class Command(BaseCommand):
                             news_media = NewsMedia(
                                 news=news,
                                 media_type="image",
-                                file=File(img_file, name=f"news_{news.id}_{idx}_{image_filename}"),
+                                file=File(
+                                    img_file,
+                                    name=f"news_{news.id}_{idx}_{image_filename}",
+                                ),
                                 order=idx,
                             )
                             news_media.save()
                     else:
                         # Fallback: create a simple colored image if file doesn't exist
-                        self.stdout.write(self.style.WARNING(f"Image not found: {image_filename}, using placeholder"))
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"Image not found: {image_filename}, using placeholder"
+                            )
+                        )
                         img = Image.new("RGB", (800, 600), color=(214, 40, 40))
                         img_io = BytesIO()
                         img.save(img_io, format="JPEG")
@@ -364,7 +476,9 @@ class Command(BaseCommand):
                         news_media.save()
 
             action = "Created" if created else "Updated"
-            images_info = f" with {len(selected_images)} images" if selected_images else ""
+            images_info = (
+                f" with {len(selected_images)} images" if selected_images else ""
+            )
             self.stdout.write(
                 self.style.SUCCESS(f"{action} news: {title_en}{images_info}")
             )
