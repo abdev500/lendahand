@@ -13,7 +13,6 @@ build/
 .env.local
 node_modules/
 frontend/node_modules/
-frontend/dist/
+# frontend/dist/ is needed for Docker builds, don't exclude it
 .git/
 .gitignore
-
