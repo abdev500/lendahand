@@ -1,0 +1,11 @@
+{{- if .Values.backend.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "lendahand.fullname" . }}-backend-config
+  labels:
+    {{- include "lendahand.backend.labels" . | nindent 4 }}
+data:
+  ALLOWED_HOSTS: {{ .Values.backend.env.ALLOWED_HOSTS | quote }}
+{{- end }}
+
