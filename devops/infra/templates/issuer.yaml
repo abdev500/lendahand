@@ -1,16 +1,20 @@
+{{- if index .Values "cert-manager" "enabled" }}
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: letsencrypt-issuer
+  name: {{ index .Values "cert-manager" "issuer" "name" | default "letsencrypt-issuer" }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   acme:
-    # Production CA
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: admin@lend-a-hand.me
+    server: {{ index .Values "cert-manager" "issuer" "server" | default "https://acme-v02.api.letsencrypt.org/directory" }}
+    email: {{ index .Values "cert-manager" "issuer" "email" | default "admin@lend-a-hand.me" }}
     privateKeySecretRef:
-      name: letsencrypt-account-key
+      name: {{ index .Values "cert-manager" "issuer" "privateKeySecretName" | default "letsencrypt-account-key" }}
     solvers:
       - http01:
           ingress:
-            class: nginx
-
+            class: {{ index .Values "cert-manager" "issuer" "ingressClass" | default "nginx" }}
+{{- end }}

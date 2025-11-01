@@ -7,9 +7,9 @@ backend:
   replicaCount: 1
   
   image:
-    registry: "localhost:5000"
-    repository: lendahand-backend
-    tag: "dev"
+    registry: "us-central1-docker.pkg.dev/test-donate-472114/donatereg"
+    repository: backend
+    tag: "c982c53a6c5ece415662cd887cb2a030227cdb6b"
     pullPolicy: IfNotPresent
   
   service:
@@ -41,8 +41,8 @@ frontend:
   replicaCount: 1
   
   image:
-    registry: "localhost:5000"
-    repository: lendahand-frontend
+    registry: "us-central1-docker.pkg.dev/test-donate-472114/donatereg"
+    repository: frontend
     tag: "dev"
     pullPolicy: IfNotPresent
   
