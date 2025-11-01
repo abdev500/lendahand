@@ -144,8 +144,7 @@ class DonationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Donation
         fields = [
-            'id', 'campaign', 'campaign_id', 'amount', 'donor_name',
-            'donor_email', 'is_anonymous', 'created_at'
+            'id', 'campaign', 'campaign_id', 'amount', 'created_at'
         ]
         read_only_fields = ['id', 'created_at']
 
@@ -155,7 +154,7 @@ class DonationCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Donation
-        fields = ['campaign_id', 'amount', 'donor_name', 'donor_email', 'is_anonymous']
+        fields = ['campaign_id', 'amount']
     
     def validate_campaign_id(self, value):
         try:
