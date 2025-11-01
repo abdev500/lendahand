@@ -42,3 +42,6 @@ frontend/.vite/
 .DS_Store
 Thumbs.db
 
+# GitHub Actions artifacts
+.github/workflows/.DS_Store
+

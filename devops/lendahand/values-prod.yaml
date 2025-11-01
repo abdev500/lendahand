@@ -1,0 +1,140 @@
+# Production values for lendahand
+global:
+  imageRegistry: "your-registry.io"
+  imagePullSecrets:
+    - name: registry-secret
+
+backend:
+  enabled: true
+  replicaCount: 3
+  
+  image:
+    registry: "your-registry.io"
+    repository: lendahand-backend
+    tag: "v1.0.0"
+    pullPolicy: Always
+  
+  service:
+    type: ClusterIP
+    port: 8000
+  
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    hosts:
+      - host: api.lendahand.me
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: api-lendahand-tls
+        hosts:
+          - api.lendahand.me
+  
+  env:
+    DEBUG: "False"
+    DJANGO_SECRET_KEY: "REPLACE_WITH_SECURE_SECRET_KEY"
+    DATABASE_URL: "postgresql://lendahand:REPLACE_WITH_PASSWORD@postgresql:5432/lendahand"
+    STRIPE_SECRET_KEY: "REPLACE_WITH_STRIPE_SECRET"
+    STRIPE_PUBLISHABLE_KEY: "REPLACE_WITH_STRIPE_PUBLISHABLE"
+    STRIPE_WEBHOOK_SECRET: "REPLACE_WITH_WEBHOOK_SECRET"
+    ALLOWED_HOSTS: "api.lendahand.me"
+  
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+  
+  volumes:
+    - name: media
+      persistentVolumeClaim:
+        claimName: backend-media-prod
+
+frontend:
+  enabled: true
+  replicaCount: 3
+  
+  image:
+    registry: "your-registry.io"
+    repository: lendahand-frontend
+    tag: "v1.0.0"
+    pullPolicy: Always
+  
+  service:
+    type: ClusterIP
+    port: 80
+  
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    hosts:
+      - host: lendahand.me
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: lendahand-tls
+        hosts:
+          - lendahand.me
+  
+  env:
+    REACT_APP_API_URL: "https://api.lendahand.me"
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "REPLACE_WITH_SECURE_PASSWORD"
+    database: "lendahand"
+    username: "lendahand"
+    password: "REPLACE_WITH_SECURE_PASSWORD"
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: "fast-ssd"
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+  backup:
+    enabled: true
+    cronjob:
+      schedule: "0 2 * * *"  # Daily at 2 AM
+
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  architecture: standalone
+  master:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: "fast-ssd"
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
