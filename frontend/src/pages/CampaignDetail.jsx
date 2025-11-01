@@ -25,11 +25,18 @@ function CampaignDetail() {
     if (success === 'true') {
       // Confirm payment after redirect
       const sessionId = searchParams.get('session_id')
-      if (sessionId) {
+      // Only confirm if session_id exists and is not the placeholder
+      if (sessionId && sessionId !== '{CHECKOUT_SESSION_ID}' && !sessionId.includes('CHECKOUT_SESSION_ID')) {
+        console.log('Confirming payment with session_id:', sessionId)
         confirmPayment(sessionId)
+      } else {
+        console.warn('Invalid session_id from Stripe redirect:', sessionId)
+        // Still refresh in case webhook processed it
+        fetchCampaign()
+        fetchDonations()
       }
     }
-  }, [success])
+  }, [success, searchParams])
 
   const fetchCampaign = async () => {
     try {
@@ -53,12 +60,18 @@ function CampaignDetail() {
 
   const confirmPayment = async (sessionId) => {
     try {
-      await api.post('/donations/confirm_payment/', { session_id: sessionId })
+      console.log('Calling confirm_payment API with session_id:', sessionId)
+      const response = await api.post('/donations/confirm_payment/', { session_id: sessionId })
+      console.log('Payment confirmation response:', response.data)
       // Refresh campaign and donations after successful payment
-      fetchCampaign()
-      fetchDonations()
+      await fetchCampaign()
+      await fetchDonations()
     } catch (error) {
       console.error('Error confirming payment:', error)
+      console.error('Error details:', error.response?.data)
+      // Still refresh to show any updates from webhook
+      fetchCampaign()
+      fetchDonations()
     }
   }
 

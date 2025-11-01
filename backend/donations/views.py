@@ -303,10 +303,8 @@ class DonationViewSet(viewsets.ModelViewSet):
                     }
                 ],
                 mode="payment",
-                success_url=request.build_absolute_uri(
-                    f"/campaign/{campaign_id}?success=true&session_id={{CHECKOUT_SESSION_ID}}"
-                ),
-                cancel_url=request.build_absolute_uri(f"/campaign/{campaign_id}?canceled=true"),
+                success_url=f"{settings.FRONTEND_URL}/campaign/{campaign_id}?success=true&session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=f"{settings.FRONTEND_URL}/campaign/{campaign_id}?canceled=true",
                 metadata={
                     "campaign_id": campaign_id,
                 },
@@ -343,22 +341,45 @@ class DonationViewSet(viewsets.ModelViewSet):
                 metadata = session.metadata
                 campaign_id = int(metadata["campaign_id"])
                 amount = session.amount_total / 100  # Convert from cents
+                payment_intent = session.payment_intent
+
+                from decimal import Decimal
 
                 campaign = Campaign.objects.get(id=campaign_id)
+
+                # Check if donation already exists (prevent duplicates)
+                if payment_intent and Donation.objects.filter(
+                    stripe_payment_intent_id=payment_intent
+                ).exists():
+                    logger.info(f"Donation already exists for payment_intent {payment_intent}")
+                    # Return existing donation, but ensure campaign amount is updated
+                    existing_donation = Donation.objects.get(stripe_payment_intent_id=payment_intent)
+                    # Update campaign amount if it doesn't reflect this donation
+                    # Recalculate from all donations to ensure consistency
+                    all_donations = Donation.objects.filter(campaign=campaign)
+                    total_donated = sum(Decimal(str(d.amount)) for d in all_donations)
+                    if campaign.current_amount != total_donated:
+                        campaign.current_amount = total_donated
+                        campaign.save()
+                        logger.info(f"Updated campaign {campaign_id} current_amount to {total_donated}")
+                    return Response(
+                        {"status": "success", "donation": DonationSerializer(existing_donation).data}
+                    )
 
                 # Create donation record (all donations are anonymous)
                 donation = Donation.objects.create(
                     campaign=campaign,
-                    amount=amount,
+                    amount=Decimal(str(amount)),
                     donor_name="",
                     donor_email="",
                     is_anonymous=True,
-                    stripe_payment_intent_id=session.payment_intent,
+                    stripe_payment_intent_id=payment_intent,
                 )
 
                 # Update campaign amount
-                campaign.current_amount += amount
+                campaign.current_amount = (campaign.current_amount or Decimal("0")) + Decimal(str(amount))
                 campaign.save()
+                logger.info(f"Updated campaign {campaign_id} current_amount by {amount}")
 
                 return Response({"status": "success", "donation": DonationSerializer(donation).data})
             else:
@@ -436,22 +457,36 @@ def stripe_webhook(request):
         try:
             campaign_id = int(metadata.get("campaign_id"))
             amount = session["amount_total"] / 100
+            payment_intent = session.get("payment_intent", "")
+
+            # Check if donation already exists (prevent duplicates)
+            if payment_intent and Donation.objects.filter(
+                stripe_payment_intent_id=payment_intent
+            ).exists():
+                logger.info(f"Donation already exists for payment_intent {payment_intent}")
+                return Response({"status": "already_processed"}, status=200)
+
             campaign = Campaign.objects.get(id=campaign_id)
+
+            from decimal import Decimal
 
             # Create donation record (all donations are anonymous)
             Donation.objects.create(
                 campaign=campaign,
-                amount=amount,
+                amount=Decimal(str(amount)),
                 donor_name="",
                 donor_email="",
                 is_anonymous=True,
-                stripe_payment_intent_id=session.get("payment_intent", ""),
+                stripe_payment_intent_id=payment_intent,
             )
 
-            campaign.current_amount += amount
+            # Update campaign amount
+            campaign.current_amount = (campaign.current_amount or Decimal("0")) + Decimal(str(amount))
             campaign.save()
+            logger.info(f"Webhook: Donation for campaign {campaign_id} confirmed. Updated amount by {amount}")
 
         except Exception as e:
+            logger.error(f"Webhook error processing checkout.session.completed: {e}")
             return Response({"error": str(e)}, status=500)
 
     return Response({"status": "success"})
