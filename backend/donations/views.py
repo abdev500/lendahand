@@ -116,6 +116,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
 
         return queryset.select_related("created_by").prefetch_related("media", "donations")
 
+
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user, status="pending")
 
