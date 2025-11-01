@@ -2,7 +2,6 @@ import stripe
 from django.conf import settings
 from django.contrib.auth import logout
 from django.db.models import Q
-from django.utils import translation
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions, status, viewsets
@@ -18,6 +17,7 @@ from .serializers import (
     DonationCreateSerializer,
     DonationSerializer,
     LoginSerializer,
+    NewsCreateSerializer,
     NewsSerializer,
     PasswordChangeSerializer,
     UserRegistrationSerializer,
@@ -47,7 +47,10 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = PasswordChangeSerializer(data=request.data, context={"user": request.user})
         if serializer.is_valid():
             if not request.user.check_password(serializer.validated_data["old_password"]):
-                return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"old_password": ["Wrong password."]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             request.user.set_password(serializer.validated_data["new_password"])
             request.user.save()
             return Response({"status": "password changed"})
@@ -62,7 +65,10 @@ def register(request):
     if serializer.is_valid():
         user = serializer.save()
         token, created = Token.objects.get_or_create(user=user)
-        return Response({"token": token.key, "user": UserSerializer(user).data}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"token": token.key, "user": UserSerializer(user).data},
+            status=status.HTTP_201_CREATED,
+        )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -117,7 +123,10 @@ class CampaignViewSet(viewsets.ModelViewSet):
         return queryset.select_related("created_by").prefetch_related("media", "donations")
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user, status="pending")
+        # Don't pass created_by and status here - let the serializer handle it
+        # This avoids duplicate keyword arguments when the serializer's create() method
+        # also tries to set created_by
+        serializer.save()
 
     def perform_update(self, serializer):
         instance = serializer.instance
@@ -150,6 +159,82 @@ class CampaignViewSet(viewsets.ModelViewSet):
         campaign.save()
         return Response({"status": "campaign cancelled"})
 
+    @action(detail=True, methods=["post"])
+    def approve(self, request, pk=None):
+        """Approve a pending campaign. Only moderators/staff can approve."""
+        if not (request.user.is_moderator or request.user.is_staff):
+            raise PermissionDenied("Only moderators and staff can approve campaigns.")
+
+        campaign = self.get_object()
+        if campaign.status != "pending":
+            return Response(
+                {"error": "Campaign is not pending moderation."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        moderation_notes = request.data.get("moderation_notes", "")
+        campaign.status = "approved"
+        campaign.moderation_notes = moderation_notes
+        campaign.save()
+
+        # Create moderation history
+        from .models import ModerationHistory
+
+        ModerationHistory.objects.create(
+            campaign=campaign,
+            moderator=request.user,
+            action="approve",
+            notes=moderation_notes,
+        )
+
+        return Response(
+            {
+                "status": "campaign approved",
+                "campaign": CampaignSerializer(campaign).data,
+            }
+        )
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request, pk=None):
+        """Reject a pending campaign. Only moderators/staff can reject."""
+        if not (request.user.is_moderator or request.user.is_staff):
+            raise PermissionDenied("Only moderators and staff can reject campaigns.")
+
+        campaign = self.get_object()
+        if campaign.status != "pending":
+            return Response(
+                {"error": "Campaign is not pending moderation."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        moderation_notes = request.data.get("moderation_notes", "")
+        if not moderation_notes:
+            return Response(
+                {"error": "Rejection reason is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        campaign.status = "rejected"
+        campaign.moderation_notes = moderation_notes
+        campaign.save()
+
+        # Create moderation history
+        from .models import ModerationHistory
+
+        ModerationHistory.objects.create(
+            campaign=campaign,
+            moderator=request.user,
+            action="reject",
+            notes=moderation_notes,
+        )
+
+        return Response(
+            {
+                "status": "campaign rejected",
+                "campaign": CampaignSerializer(campaign).data,
+            }
+        )
+
 
 class DonationViewSet(viewsets.ModelViewSet):
     queryset = Donation.objects.all()
@@ -164,7 +249,8 @@ class DonationViewSet(viewsets.ModelViewSet):
         return queryset
 
     @swagger_auto_schema(
-        request_body=DonationCreateSerializer, responses={200: openapi.Response("Stripe checkout session")}
+        request_body=DonationCreateSerializer,
+        responses={200: openapi.Response("Stripe checkout session")},
     )
     @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
     def create_checkout_session(self, request):
@@ -252,21 +338,50 @@ class DonationViewSet(viewsets.ModelViewSet):
 
                 return Response({"status": "success", "donation": DonationSerializer(donation).data})
             else:
-                return Response({"error": "Payment not completed"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "Payment not completed"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class NewsViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = News.objects.filter(published=True)
-    serializer_class = NewsSerializer
-    permission_classes = [permissions.AllowAny]
+class NewsViewSet(viewsets.ModelViewSet):
+    queryset = News.objects.all()
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_serializer_class(self):
+        if self.action == "create" or self.action == "update":
+            return NewsCreateSerializer
+        return NewsSerializer
 
     def get_queryset(self):
-        queryset = News.objects.filter(published=True)
-        # Use current language for translations
-        lang = translation.get_language()
-        return queryset.translated(lang) if lang else queryset
+        queryset = News.objects.all()
+        # Public users can only see published news
+        if not self.request.user.is_authenticated:
+            queryset = queryset.filter(published=True)
+        elif not (self.request.user.is_moderator or self.request.user.is_staff):
+            queryset = queryset.filter(published=True)
+        # Moderators/staff can see all news (including unpublished)
+        return queryset.order_by("-created_at")
+
+    def perform_create(self, serializer):
+        # Only moderators and staff can create news
+        if not (self.request.user.is_moderator or self.request.user.is_staff):
+            raise PermissionDenied("Only moderators and staff can create news.")
+        serializer.save()
+
+    def perform_update(self, serializer):
+        # Only moderators and staff can update news
+        if not (self.request.user.is_moderator or self.request.user.is_staff):
+            raise PermissionDenied("Only moderators and staff can update news.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        # Only moderators and staff can delete news
+        if not (self.request.user.is_moderator or self.request.user.is_staff):
+            raise PermissionDenied("Only moderators and staff can delete news.")
+        instance.delete()
 
 
 @api_view(["POST"])

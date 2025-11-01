@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from parler.models import TranslatableModel, TranslatedFields
 
 
 class User(AbstractUser):
@@ -116,21 +115,41 @@ class ModerationHistory(models.Model):
         return f"{self.action} - {self.campaign.title}"
 
 
-class News(TranslatableModel):
-    """News entries with localization."""
+class News(models.Model):
+    """News entries without localization."""
 
-    image = models.ImageField(upload_to="news/", blank=True)
+    title = models.CharField(max_length=200, default="")
+    content = models.TextField(default="")
+    image = models.ImageField(upload_to="news/", blank=True)  # Legacy field, kept for backward compatibility
     published = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    translations = TranslatedFields(
-        title=models.CharField(max_length=200),
-        content=models.TextField(),
-    )
 
     class Meta:
         ordering = ["-created_at"]
 
     def __str__(self):
         return self.title if self.title else f"News {self.id}"
+
+
+class NewsMedia(models.Model):
+    """Media files for news (images/videos)."""
+
+    MEDIA_TYPE_CHOICES = [
+        ("image", "Image"),
+        ("video", "Video"),
+    ]
+
+    news = models.ForeignKey(News, on_delete=models.CASCADE, related_name="media")
+    media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES)
+    file = models.FileField(upload_to="news/")
+    order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "created_at"]
+        unique_together = ["news", "order"]
+
+    def __str__(self):
+        news_title = self.news.title if self.news.title else f"News {self.news.id}"
+        return f"{news_title} - {self.media_type}"

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Management - Lend a Hand</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #d62828;
+            margin-bottom: 30px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .nav {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        .nav a {
+            color: #d62828;
+            text-decoration: none;
+            margin-right: 20px;
+            font-weight: 500;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .news-list {
+            display: grid;
+            gap: 20px;
+        }
+        .news-card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .news-card h3 {
+            color: #9d1d1d;
+            margin-bottom: 10px;
+        }
+        .news-card p {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .news-actions {
+            margin-top: 15px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .btn-create {
+            background: #28a745;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .btn-edit {
+            background: #ffc107;
+            color: #000;
+        }
+        .btn-view {
+            background: #007bff;
+            color: white;
+        }
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-publish {
+            background: #28a745;
+            color: white;
+        }
+        .btn-unpublish {
+            background: #6c757d;
+            color: white;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            color: #d62828;
+            margin-bottom: 20px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .empty {
+            color: #999;
+            font-style: italic;
+        }
+        .published-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background: #28a745;
+            color: white;
+        }
+        .unpublished-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background: #6c757d;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>News Management</h1>
+        <div class="nav">
+            <a href="{% url 'moderation:dashboard' %}">Dashboard</a>
+            <a href="{% url 'moderation:news' %}">News Management</a>
+            <a href="{% url 'moderation:users' %}">User Management</a>
+            <a href="/admin/">Admin Panel</a>
+            <a href="/api/">API</a>
+        </div>
+
+        <div>
+            <a href="/news/new" class="btn btn-create" target="_blank">+ Create New News</a>
+        </div>
+
+        <div class="section">
+            <h2>All News</h2>
+            {% if all_news %}
+                <div class="news-list">
+                    {% for news in all_news %}
+                        <div class="news-card">
+                            <h3>{{ news.title }}</h3>
+                            <p><strong>Published:</strong> 
+                                {% if news.published %}
+                                    <span class="published-badge">Published</span>
+                                {% else %}
+                                    <span class="unpublished-badge">Unpublished</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Created:</strong> {{ news.created_at|date:"Y-m-d H:i" }}</p>
+                            <p><strong>Content:</strong> {{ news.content|truncatewords:30 }}</p>
+                            <div class="news-actions">
+                                <a href="/news/{{ news.id }}/edit" class="btn btn-edit" target="_blank">Edit News</a>
+                                <a href="/api/news/{{ news.id }}/" class="btn btn-view" target="_blank">View Details</a>
+                                <form method="post" action="{% url 'moderation:toggle_news' news.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    {% if news.published %}
+                                        <button type="submit" class="btn btn-unpublish">Unpublish</button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-publish">Publish</button>
+                                    {% endif %}
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty">No news articles yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
+
