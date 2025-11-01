@@ -484,3 +484,30 @@ def stripe_webhook(request):
             return Response({"error": str(e)}, status=500)
 
     return Response({"status": "success"})
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def health_check(request):
+    """
+    Kubernetes health check endpoint.
+    Returns 200 OK if the service is healthy.
+    Optionally checks database connectivity.
+    """
+    try:
+        # Quick database connectivity check
+        from django.db import connection
+
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            db_healthy = cursor.fetchone() is not None
+    except Exception as e:
+        logger.warning(f"Health check database check failed: {e}")
+        db_healthy = False
+
+    if db_healthy:
+        return Response({"status": "healthy", "database": "connected"}, status=status.HTTP_200_OK)
+    else:
+        # Return 200 even if DB check fails - allows for graceful degradation
+        # Adjust based on your requirements (you might want 503 if DB is critical)
+        return Response({"status": "healthy", "database": "unknown"}, status=status.HTTP_200_OK)
