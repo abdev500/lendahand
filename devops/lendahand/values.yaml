@@ -75,8 +75,7 @@ frontend:
   replicaCount: 1
   
   image:
-    registry: ""
-    repository: lendahand-frontend
+    repository: frontend
     tag: "latest"
     pullPolicy: IfNotPresent
   
