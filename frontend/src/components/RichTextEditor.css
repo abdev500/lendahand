@@ -1,0 +1,93 @@
+.rich-text-editor {
+  margin-bottom: 1rem;
+}
+
+.rich-text-editor .ql-container {
+  min-height: 250px;
+  font-size: 1rem;
+  font-family: 'Inter', sans-serif;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  background: var(--color-white);
+}
+
+.rich-text-editor .ql-editor {
+  min-height: 250px;
+  padding: 1rem;
+  line-height: 1.6;
+}
+
+.rich-text-editor .ql-editor.ql-blank::before {
+  font-style: normal;
+  color: #999;
+  left: 1rem;
+}
+
+.rich-text-editor .ql-editor p,
+.rich-text-editor .ql-editor ol,
+.rich-text-editor .ql-editor ul {
+  margin-bottom: 0.75rem;
+}
+
+.rich-text-editor .ql-toolbar {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  border: 1px solid #ddd;
+  background: var(--color-light-gray);
+  padding: 0.75rem;
+}
+
+.rich-text-editor .ql-container {
+  border: 1px solid #ddd;
+  border-top: none;
+}
+
+.rich-text-editor .ql-container.ql-snow,
+.rich-text-editor .ql-toolbar.ql-snow {
+  border-color: #ddd;
+}
+
+.rich-text-editor .ql-container.ql-snow:focus-within,
+.rich-text-editor .ql-container.ql-snow:hover {
+  border-color: var(--color-red);
+}
+
+.rich-text-editor .ql-container.ql-snow:focus-within .ql-toolbar {
+  border-color: var(--color-red);
+}
+
+.rich-text-editor .ql-snow .ql-picker-label {
+  border-color: transparent;
+}
+
+.rich-text-editor .ql-snow .ql-stroke {
+  stroke: #666;
+}
+
+.rich-text-editor .ql-snow .ql-fill {
+  fill: #666;
+}
+
+.rich-text-editor .ql-snow button:hover .ql-stroke,
+.rich-text-editor .ql-snow button:hover .ql-fill,
+.rich-text-editor .ql-snow button.ql-active .ql-stroke,
+.rich-text-editor .ql-snow button.ql-active .ql-fill {
+  stroke: var(--color-red);
+  fill: var(--color-red);
+}
+
+.rich-text-editor .ql-snow .ql-picker-label:hover,
+.rich-text-editor .ql-snow .ql-picker-label.ql-active {
+  color: var(--color-red);
+}
+
+.rich-text-editor .ql-snow .ql-picker.ql-expanded .ql-picker-options {
+  border-color: #ddd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rich-text-editor .ql-snow .ql-picker-item:hover,
+.rich-text-editor .ql-snow .ql-picker-item.ql-selected {
+  color: var(--color-red);
+}
+

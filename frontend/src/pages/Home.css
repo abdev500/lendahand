@@ -1,0 +1,87 @@
+.hero {
+  background: linear-gradient(135deg, var(--color-red) 0%, var(--color-dark-red) 100%);
+  color: var(--color-white);
+  padding: 6rem 0;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--color-white);
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.btn-primary {
+  background: var(--color-white);
+  color: var(--color-red);
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1.125rem;
+  display: inline-block;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+}
+
+.campaigns-preview {
+  padding: 4rem 0;
+  background: var(--color-light-gray);
+}
+
+.campaigns-preview h2 {
+  text-align: center;
+  margin-bottom: 3rem;
+  font-size: 2.5rem;
+}
+
+.campaigns-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.view-all {
+  text-align: center;
+}
+
+.btn-secondary {
+  background: var(--color-red);
+  color: var(--color-white);
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  display: inline-block;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+  background: var(--color-dark-red);
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .campaigns-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

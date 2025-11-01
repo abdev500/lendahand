@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=lendahand
+      - POSTGRES_USER=lendahand
+      - POSTGRES_PASSWORD=lendahand
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    command: bash -c "python manage.py migrate && python manage.py seed_data && gunicorn --bind 0.0.0.0:8000 --workers 3 lendahand.wsgi:application"
+    volumes:
+      - ./backend:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://lendahand:lendahand@db:5432/lendahand
+      - DEBUG=False
+      - DJANGO_SECRET_KEY=your-secret-key-change-in-production
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+

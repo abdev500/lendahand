@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Lend a Hand</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #d62828;
+            margin-bottom: 30px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .nav {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        .nav a {
+            color: #d62828;
+            text-decoration: none;
+            margin-right: 20px;
+            font-weight: 500;
+        }
+        .search-form {
+            margin-bottom: 30px;
+        }
+        .search-form input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 300px;
+        }
+        .search-form button {
+            padding: 10px 20px;
+            background: #d62828;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f5f5f5;
+            color: #9d1d1d;
+            font-weight: 600;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-moderator {
+            background: #ffc107;
+            color: #000;
+        }
+        .badge-staff {
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>User Management</h1>
+        <div class="nav">
+            <a href="{% url 'moderation:dashboard' %}">Dashboard</a>
+            <a href="{% url 'moderation:users' %}">User Management</a>
+            <a href="/admin/">Admin Panel</a>
+            <a href="/api/">API</a>
+        </div>
+
+        <form method="get" class="search-form">
+            <input type="text" name="search" value="{{ search_query }}" placeholder="Search by email or username...">
+            <button type="submit">Search</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Username</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.phone|default:"-" }}</td>
+                        <td>
+                            {% if user.is_staff %}
+                                <span class="badge badge-staff">Staff</span>
+                            {% endif %}
+                            {% if user.is_moderator %}
+                                <span class="badge badge-moderator">Moderator</span>
+                            {% endif %}
+                            {% if not user.is_staff and not user.is_moderator %}
+                                <span>User</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.date_joined|date:"Y-m-d" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">No users found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
+
