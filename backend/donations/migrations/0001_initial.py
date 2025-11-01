@@ -4,8 +4,6 @@ import django.contrib.auth.models
 import django.contrib.auth.validators
 import django.db.models.deletion
 import django.utils.timezone
-import parler.fields
-import parler.models
 from django.conf import settings
 from django.db import migrations, models
 
@@ -142,6 +140,8 @@ class Migration(migrations.Migration):
             name="News",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("title", models.CharField(default="", max_length=200)),
+                ("content", models.TextField(default="")),
                 ("image", models.ImageField(blank=True, upload_to="news/")),
                 ("published", models.BooleanField(default=False)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -150,7 +150,6 @@ class Migration(migrations.Migration):
             options={
                 "ordering": ["-created_at"],
             },
-            bases=(parler.models.TranslatableModelMixin, models.Model),
         ),
         migrations.CreateModel(
             name="ModerationHistory",
@@ -198,34 +197,6 @@ class Migration(migrations.Migration):
             options={
                 "ordering": ["-created_at"],
             },
-        ),
-        migrations.CreateModel(
-            name="NewsTranslation",
-            fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("language_code", models.CharField(db_index=True, max_length=15, verbose_name="Language")),
-                ("title", models.CharField(max_length=200)),
-                ("content", models.TextField()),
-                (
-                    "master",
-                    parler.fields.TranslationsForeignKey(
-                        editable=False,
-                        null=True,
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="translations",
-                        to="donations.news",
-                    ),
-                ),
-            ],
-            options={
-                "verbose_name": "news Translation",
-                "db_table": "donations_news_translation",
-                "db_tablespace": "",
-                "managed": True,
-                "default_permissions": (),
-                "unique_together": {("language_code", "master")},
-            },
-            bases=(parler.models.TranslatedFieldsModelMixin, models.Model),
         ),
         migrations.CreateModel(
             name="CampaignMedia",
