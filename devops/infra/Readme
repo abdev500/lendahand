@@ -1,2 +1,9 @@
+
+andrei@AndreiMB64GB devops % helm upgrade --install cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --set installCRDs=true                                                         
+Release "cert-manager" does not exist. Installing it now.
+
 kubectl create namespace cert-manager
 

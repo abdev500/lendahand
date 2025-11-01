@@ -61,3 +61,4 @@ jobs:
             --build-arg GITHUB_REF="${GITHUB_REF}" \
             backend
           docker push "${DOCKER_TAG}"
+          echo "Pushed:" "${DOCKER_TAG}"

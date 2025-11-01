@@ -7,12 +7,12 @@ global:
 # Backend Django service
 backend:
   enabled: true
-  replicaCount: 2
+  replicaCount: 1
   
   image:
-    registry: ""
-    repository: lendahand-backend
-    tag: "latest"
+    registry: "us-central1-docker.pkg.dev/test-donate-472114/donatereg"
+    repository: backend
+    tag: "c982c53a6c5ece415662cd887cb2a030227cdb6b"
     pullPolicy: IfNotPresent
   
   imagePullSecrets: []
@@ -27,7 +27,7 @@ backend:
     className: "nginx"
     annotations: {}
     hosts:
-      - host: api.lendahand.me
+      - host: api-test.lendahand.me
         paths:
           - path: /
             pathType: Prefix
@@ -82,7 +82,7 @@ backend:
 # Frontend React service
 frontend:
   enabled: true
-  replicaCount: 2
+  replicaCount: 1
   
   image:
     registry: ""
@@ -139,37 +139,6 @@ frontend:
   tolerations: []
   affinity: {}
 
-# PostgreSQL Database (using Bitnami chart)
-postgresql:
-  enabled: true
-  auth:
-    postgresPassword: "changeme"
-    database: "lendahand"
-    username: "lendahand"
-    password: "changeme"
-  persistence:
-    enabled: true
-    size: 10Gi
-  resources:
-    limits:
-      cpu: 1000m
-      memory: 1Gi
-    requests:
-      cpu: 500m
-      memory: 512Mi
-
-# Redis (optional, for caching/sessions)
-redis:
-  enabled: false
-  auth:
-    enabled: false
-  architecture: standalone
-  master:
-    persistence:
-      enabled: true
-      size: 8Gi
-
-# Ingress Controller (optional)
 ingress:
   enabled: true
   className: "nginx"
