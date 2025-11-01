@@ -201,9 +201,6 @@ class DonationViewSet(viewsets.ModelViewSet):
                 cancel_url=request.build_absolute_uri(f'/campaign/{campaign_id}?canceled=true'),
                 metadata={
                     'campaign_id': campaign_id,
-                    'donor_name': serializer.validated_data.get('donor_name', ''),
-                    'donor_email': serializer.validated_data.get('donor_email', ''),
-                    'is_anonymous': str(serializer.validated_data.get('is_anonymous', True)),
                 }
             )
             
@@ -239,13 +236,13 @@ class DonationViewSet(viewsets.ModelViewSet):
                 
                 campaign = Campaign.objects.get(id=campaign_id)
                 
-                # Create donation record
+                # Create donation record (all donations are anonymous)
                 donation = Donation.objects.create(
                     campaign=campaign,
                     amount=amount,
-                    donor_name=metadata.get('donor_name', ''),
-                    donor_email=metadata.get('donor_email', ''),
-                    is_anonymous=metadata.get('is_anonymous', 'True') == 'True',
+                    donor_name='',
+                    donor_email='',
+                    is_anonymous=True,
                     stripe_payment_intent_id=session.payment_intent
                 )
                 
@@ -304,12 +301,13 @@ def stripe_webhook(request):
             amount = session['amount_total'] / 100
             campaign = Campaign.objects.get(id=campaign_id)
             
+            # Create donation record (all donations are anonymous)
             donation = Donation.objects.create(
                 campaign=campaign,
                 amount=amount,
-                donor_name=metadata.get('donor_name', ''),
-                donor_email=metadata.get('donor_email', ''),
-                is_anonymous=metadata.get('is_anonymous', 'True') == 'True',
+                donor_name='',
+                donor_email='',
+                is_anonymous=True,
                 stripe_payment_intent_id=session.get('payment_intent', '')
             )
             

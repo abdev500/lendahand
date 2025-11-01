@@ -28,10 +28,11 @@ class CampaignAdmin(admin.ModelAdmin):
 
 @admin.register(Donation)
 class DonationAdmin(admin.ModelAdmin):
-    list_display = ['campaign', 'amount', 'donor_email', 'is_anonymous', 'created_at']
-    list_filter = ['created_at', 'is_anonymous']
-    search_fields = ['donor_email', 'donor_name']
+    list_display = ['campaign', 'amount', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['campaign__title']
     readonly_fields = ['created_at']
+    # All donations are anonymous - no donor information is stored or displayed
 
 
 @admin.register(ModerationHistory)
