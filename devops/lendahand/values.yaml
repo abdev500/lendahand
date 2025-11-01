@@ -1,0 +1,180 @@
+# Default values for lendahand
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# Backend Django service
+backend:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    registry: ""
+    repository: lendahand-backend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  imagePullSecrets: []
+  
+  service:
+    type: ClusterIP
+    port: 8000
+    annotations: {}
+  
+  ingress:
+    enabled: false
+    className: "nginx"
+    annotations: {}
+    hosts:
+      - host: api.lendahand.me
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  
+  env:
+    DEBUG: "False"
+    DJANGO_SECRET_KEY: "change-me-in-production"
+    DATABASE_URL: "postgresql://lendahand:changeme@postgresql:5432/lendahand"
+    STRIPE_SECRET_KEY: ""
+    STRIPE_PUBLISHABLE_KEY: ""
+    STRIPE_WEBHOOK_SECRET: ""
+    ALLOWED_HOSTS: "*"
+  
+  envFrom: []
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  
+  livenessProbe:
+    httpGet:
+      path: /api/health/
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  
+  readinessProbe:
+    httpGet:
+      path: /api/health/
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 5
+  
+  volumes:
+    - name: media
+      persistentVolumeClaim:
+        claimName: backend-media
+  
+  volumeMounts:
+    - name: media
+      mountPath: /app/media
+  
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Frontend React service
+frontend:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    registry: ""
+    repository: lendahand-frontend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  imagePullSecrets: []
+  
+  service:
+    type: ClusterIP
+    port: 80
+    annotations: {}
+  
+  ingress:
+    enabled: false
+    className: "nginx"
+    annotations: {}
+    hosts:
+      - host: lendahand.me
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  
+  env:
+    REACT_APP_API_URL: "http://backend:8000"
+  
+  envFrom: []
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 5
+  
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# PostgreSQL Database (using Bitnami chart)
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "changeme"
+    database: "lendahand"
+    username: "lendahand"
+    password: "changeme"
+  persistence:
+    enabled: true
+    size: 10Gi
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+# Redis (optional, for caching/sessions)
+redis:
+  enabled: false
+  auth:
+    enabled: false
+  architecture: standalone
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+
+# Ingress Controller (optional)
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  tls:
+    enabled: true
+
