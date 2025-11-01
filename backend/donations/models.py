@@ -161,7 +161,5 @@ class NewsMedia(models.Model):
         unique_together = ["news", "order"]
 
     def __str__(self):
-        news_title = (
-            self.news.title if self.news.title else f"News {self.news.id}"
-        )
+        news_title = self.news.title if self.news.title else f"News {self.news.id}"
         return f"{news_title} - {self.media_type}"
