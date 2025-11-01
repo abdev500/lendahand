@@ -348,9 +348,7 @@ class DonationViewSet(viewsets.ModelViewSet):
                 campaign = Campaign.objects.get(id=campaign_id)
 
                 # Check if donation already exists (prevent duplicates)
-                if payment_intent and Donation.objects.filter(
-                    stripe_payment_intent_id=payment_intent
-                ).exists():
+                if payment_intent and Donation.objects.filter(stripe_payment_intent_id=payment_intent).exists():
                     logger.info(f"Donation already exists for payment_intent {payment_intent}")
                     # Return existing donation, but ensure campaign amount is updated
                     existing_donation = Donation.objects.get(stripe_payment_intent_id=payment_intent)
@@ -362,9 +360,7 @@ class DonationViewSet(viewsets.ModelViewSet):
                         campaign.current_amount = total_donated
                         campaign.save()
                         logger.info(f"Updated campaign {campaign_id} current_amount to {total_donated}")
-                    return Response(
-                        {"status": "success", "donation": DonationSerializer(existing_donation).data}
-                    )
+                    return Response({"status": "success", "donation": DonationSerializer(existing_donation).data})
 
                 # Create donation record (all donations are anonymous)
                 donation = Donation.objects.create(
@@ -460,9 +456,7 @@ def stripe_webhook(request):
             payment_intent = session.get("payment_intent", "")
 
             # Check if donation already exists (prevent duplicates)
-            if payment_intent and Donation.objects.filter(
-                stripe_payment_intent_id=payment_intent
-            ).exists():
+            if payment_intent and Donation.objects.filter(stripe_payment_intent_id=payment_intent).exists():
                 logger.info(f"Donation already exists for payment_intent {payment_intent}")
                 return Response({"status": "already_processed"}, status=200)
 

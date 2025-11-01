@@ -32,7 +32,7 @@ frontend/dist/
 frontend/.vite/
 
 # IDE
-.vscode/
+# .vscode/  # Keep .vscode settings for team consistency
 .idea/
 *.swp
 *.swo
@@ -44,4 +44,3 @@ Thumbs.db
 
 # GitHub Actions artifacts
 .github/workflows/.DS_Store
-
