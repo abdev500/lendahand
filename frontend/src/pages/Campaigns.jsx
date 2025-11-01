@@ -16,10 +16,13 @@ function Campaigns() {
   const fetchCampaigns = async () => {
     try {
       const response = await api.get('/campaigns/?status=approved')
-      setCampaigns(response.data.results || response.data)
+      // Ensure we always have an array
+      const campaignsData = response.data.results || response.data || []
+      setCampaigns(Array.isArray(campaignsData) ? campaignsData : [])
       setLoading(false)
     } catch (error) {
       console.error('Error fetching campaigns:', error)
+      setCampaigns([]) // Set empty array on error
       setLoading(false)
     }
   }
@@ -45,4 +48,3 @@ function Campaigns() {
 }
 
 export default Campaigns
-

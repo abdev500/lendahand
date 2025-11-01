@@ -17,10 +17,13 @@ function Home() {
   const fetchCampaigns = async () => {
     try {
       const response = await api.get('/campaigns/?status=approved')
-      setCampaigns(response.data.results || response.data)
+      // Ensure we always have an array
+      const campaignsData = response.data.results || response.data || []
+      setCampaigns(Array.isArray(campaignsData) ? campaignsData : [])
       setLoading(false)
     } catch (error) {
       console.error('Error fetching campaigns:', error)
+      setCampaigns([]) // Set empty array on error
       setLoading(false)
     }
   }
@@ -42,7 +45,7 @@ function Home() {
           <h2>{t('campaigns.title')}</h2>
           {loading ? (
             <p>Loading...</p>
-          ) : campaigns.length > 0 ? (
+          ) : Array.isArray(campaigns) && campaigns.length > 0 ? (
             <div className="campaigns-grid">
               {campaigns.slice(0, 6).map((campaign) => (
                 <CampaignCard key={campaign.id} campaign={campaign} />
@@ -63,4 +66,3 @@ function Home() {
 }
 
 export default Home
-

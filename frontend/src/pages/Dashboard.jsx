@@ -21,7 +21,7 @@ function Dashboard() {
   useEffect(() => {
     const initializeDashboard = async () => {
       await checkAuth()
-      
+
       // Wait for user to be set before proceeding
       let currentUser = user
       if (!currentUser) {
@@ -35,15 +35,15 @@ function Dashboard() {
           return
         }
       }
-      
+
       await fetchCampaigns()
-      
+
       // Fetch news and pending campaigns if user is moderator/staff
       if (currentUser && (currentUser.is_moderator || currentUser.is_staff)) {
-        console.log('User is moderator/staff, fetching news and pending campaigns...', { 
-          email: currentUser.email, 
-          is_moderator: currentUser.is_moderator, 
-          is_staff: currentUser.is_staff 
+        console.log('User is moderator/staff, fetching news and pending campaigns...', {
+          email: currentUser.email,
+          is_moderator: currentUser.is_moderator,
+          is_staff: currentUser.is_staff
         })
         try {
           await Promise.all([fetchNews(), fetchPendingCampaigns()])
@@ -53,27 +53,27 @@ function Dashboard() {
           setLoading(false)
         }
       } else {
-        console.log('User is not moderator/staff', { 
-          user: currentUser ? { 
-            email: currentUser.email, 
-            is_moderator: currentUser.is_moderator, 
-            is_staff: currentUser.is_staff 
-          } : 'no user' 
+        console.log('User is not moderator/staff', {
+          user: currentUser ? {
+            email: currentUser.email,
+            is_moderator: currentUser.is_moderator,
+            is_staff: currentUser.is_staff
+          } : 'no user'
         })
         setLoading(false)
       }
-      
+
       // Check for success message from URL params
       const campaignCreated = searchParams.get('campaign_created') === 'true'
       const campaignUpdated = searchParams.get('campaign_updated') === 'true'
       const newsCreated = searchParams.get('news_created') === 'true'
       const newsUpdated = searchParams.get('news_updated') === 'true'
       const moderationTab = searchParams.get('tab') === 'moderation'
-      
+
       if (moderationTab && (currentUser?.is_moderator || currentUser?.is_staff)) {
         setActiveTab('moderation')
       }
-      
+
       if (campaignCreated || campaignUpdated) {
         if (campaignCreated) {
           setSuccessMessage(t('dashboard.createdSuccess'))
@@ -87,7 +87,7 @@ function Dashboard() {
           fetchCampaigns()
         }, 500)
       }
-      
+
       if (newsCreated || newsUpdated) {
         if (newsCreated) {
           setSuccessMessage(t('news.createdSuccess', 'News article created successfully!'))
@@ -104,7 +104,7 @@ function Dashboard() {
         }
       }
     }
-    
+
     initializeDashboard()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -128,8 +128,10 @@ function Dashboard() {
   const fetchCampaigns = async () => {
     try {
       const response = await api.get('/campaigns/')
-      const allCampaigns = response.data.results || response.data
-      
+      // Ensure we always have an array
+      const allCampaignsData = response.data.results || response.data || []
+      const allCampaigns = Array.isArray(allCampaignsData) ? allCampaignsData : []
+
       // Get current user ID - use user state if available, otherwise fetch it
       let currentUserId
       if (user) {
@@ -138,9 +140,9 @@ function Dashboard() {
         const userResponse = await api.get('/users/me/')
         currentUserId = userResponse.data.id
       }
-      
+
       // Filter to show only campaigns created by the current user
-      const myCampaigns = allCampaigns.filter(campaign => 
+      const myCampaigns = allCampaigns.filter(campaign =>
         campaign.created_by && campaign.created_by.id === currentUserId
       )
       setCampaigns(myCampaigns)
@@ -149,6 +151,7 @@ function Dashboard() {
       }
     } catch (error) {
       console.error('Error fetching campaigns:', error)
+      setCampaigns([]) // Set empty array on error
       if (!user || (!user.is_moderator && !user.is_staff)) {
         setLoading(false)
       }
@@ -171,7 +174,9 @@ function Dashboard() {
   const fetchPendingCampaigns = async () => {
     try {
       const response = await api.get('/campaigns/?status=pending')
-      const allCampaigns = response.data.results || response.data
+      // Ensure we always have an array
+      const allCampaignsData = response.data.results || response.data || []
+      const allCampaigns = Array.isArray(allCampaignsData) ? allCampaignsData : []
       console.log('Fetched pending campaigns:', allCampaigns.length, 'items')
       setPendingCampaigns(allCampaigns)
     } catch (error) {
@@ -254,7 +259,7 @@ function Dashboard() {
       'suspended': '#ff9800',
       'cancelled': '#6c757d',
     }
-    
+
     const statusLabels = {
       'draft': t('status.draft'),
       'pending': t('status.pending'),
@@ -263,11 +268,11 @@ function Dashboard() {
       'suspended': t('status.suspended'),
       'cancelled': t('status.cancelled'),
     }
-    
+
     return (
-      <span 
+      <span
         className="status-badge"
-        style={{ 
+        style={{
           backgroundColor: statusColors[status] || '#6c757d',
           color: status === 'pending' ? '#000' : '#fff'
         }}
@@ -284,8 +289,8 @@ function Dashboard() {
         {successMessage && (
           <div className="success-message">
             {successMessage}
-            <button 
-              className="close-message" 
+            <button
+              className="close-message"
               onClick={() => setSuccessMessage('')}
             >
               ×
@@ -538,4 +543,3 @@ function Dashboard() {
 }
 
 export default Dashboard
-
