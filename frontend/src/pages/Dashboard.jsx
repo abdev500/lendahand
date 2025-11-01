@@ -10,10 +10,13 @@ function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [campaigns, setCampaigns] = useState([])
   const [news, setNews] = useState([])
+  const [pendingCampaigns, setPendingCampaigns] = useState([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
   const [activeTab, setActiveTab] = useState('campaigns')
+  const [showNotesForm, setShowNotesForm] = useState(null)
+  const [notes, setNotes] = useState('')
 
   useEffect(() => {
     const initializeDashboard = async () => {
@@ -35,14 +38,20 @@ function Dashboard() {
       
       await fetchCampaigns()
       
-      // Fetch news if user is moderator/staff
+      // Fetch news and pending campaigns if user is moderator/staff
       if (currentUser && (currentUser.is_moderator || currentUser.is_staff)) {
-        console.log('User is moderator/staff, fetching news...', { 
+        console.log('User is moderator/staff, fetching news and pending campaigns...', { 
           email: currentUser.email, 
           is_moderator: currentUser.is_moderator, 
           is_staff: currentUser.is_staff 
         })
-        await fetchNews()
+        try {
+          await Promise.all([fetchNews(), fetchPendingCampaigns()])
+        } catch (error) {
+          console.error('Error fetching moderator data:', error)
+        } finally {
+          setLoading(false)
+        }
       } else {
         console.log('User is not moderator/staff', { 
           user: currentUser ? { 
@@ -59,6 +68,11 @@ function Dashboard() {
       const campaignUpdated = searchParams.get('campaign_updated') === 'true'
       const newsCreated = searchParams.get('news_created') === 'true'
       const newsUpdated = searchParams.get('news_updated') === 'true'
+      const moderationTab = searchParams.get('tab') === 'moderation'
+      
+      if (moderationTab && (currentUser?.is_moderator || currentUser?.is_staff)) {
+        setActiveTab('moderation')
+      }
       
       if (campaignCreated || campaignUpdated) {
         if (campaignCreated) {
@@ -146,12 +160,23 @@ function Dashboard() {
       const response = await api.get('/news/')
       const allNews = response.data.results || response.data
       // Moderators can see all news (including unpublished)
-      console.log('Fetched news:', allNews.length, 'items')
+      console.log('Fetched news:', allNews.length, 'items', allNews)
       setNews(allNews)
-      setLoading(false)
     } catch (error) {
       console.error('Error fetching news:', error)
-      setLoading(false)
+      setNews([])
+    }
+  }
+
+  const fetchPendingCampaigns = async () => {
+    try {
+      const response = await api.get('/campaigns/?status=pending')
+      const allCampaigns = response.data.results || response.data
+      console.log('Fetched pending campaigns:', allCampaigns.length, 'items')
+      setPendingCampaigns(allCampaigns)
+    } catch (error) {
+      console.error('Error fetching pending campaigns:', error)
+      setPendingCampaigns([])
     }
   }
 
@@ -284,6 +309,12 @@ function Dashboard() {
               {t('dashboard.myCampaigns')}
             </button>
             <button
+              className={`tab-button ${activeTab === 'moderation' ? 'active' : ''}`}
+              onClick={() => setActiveTab('moderation')}
+            >
+              {t('moderation.title', 'Moderation')}
+            </button>
+            <button
               className={`tab-button ${activeTab === 'news' ? 'active' : ''}`}
               onClick={() => setActiveTab('news')}
             >
@@ -293,58 +324,69 @@ function Dashboard() {
         )}
 
         <div className="dashboard-actions">
-          {activeTab === 'campaigns' ? (
+          {activeTab === 'campaigns' && (
             <Link to="/campaigns/new" className="btn-create">
               {t('campaign.createNew')}
             </Link>
-          ) : (
+          )}
+          {activeTab === 'news' && (
             <Link to="/news/new" className="btn-create">
               {t('news.createNew', '+ Create New News')}
             </Link>
           )}
         </div>
 
-        {activeTab === 'campaigns' ? (
+        {activeTab === 'campaigns' && (
           <div className="campaigns-section">
             <h2>{t('dashboard.myCampaigns')}</h2>
             {campaigns.length > 0 ? (
               <div className="campaigns-list">
                 {campaigns.map((campaign) => (
-                  <div key={campaign.id} className="dashboard-campaign-card">
-                    <div className="campaign-info">
-                      <h3>{campaign.title}</h3>
-                      <p className="campaign-status">
-                        {t('dashboard.status')}: {getStatusBadge(campaign.status)}
-                        {campaign.status === 'pending' && (
-                          <span className="status-note"> - {t('status.awaitingApproval')}</span>
+                    <div key={campaign.id} className="dashboard-campaign-card">
+                      <div className="campaign-info">
+                        <h3>{campaign.title}</h3>
+                        <p className="campaign-status">
+                          {t('dashboard.status')}: {getStatusBadge(campaign.status)}
+                          {campaign.status === 'pending' && (
+                            <span className="status-note"> - {t('status.awaitingApproval')}</span>
+                          )}
+                        </p>
+                        <p className="campaign-progress">
+                          ${campaign.current_amount.toLocaleString()} / ${campaign.target_amount.toLocaleString()}
+                        </p>
+                        {campaign.moderation_notes && (
+                          <div className="moderation-notes">
+                            <strong>{t('dashboard.moderationNotes', 'Moderator Comments')}:</strong>
+                            <p className="notes-content">{campaign.moderation_notes}</p>
+                          </div>
                         )}
-                      </p>
-                      <p className="campaign-progress">
-                        ${campaign.current_amount.toLocaleString()} / ${campaign.target_amount.toLocaleString()}
-                      </p>
-                    </div>
+                      </div>
                     <div className="campaign-actions">
-                      <Link to={`/campaign/${campaign.id}`} className="btn-view">
-                        {t('dashboard.view')}
+                      <Link to={`/campaign/${campaign.id}`} className="btn btn-view">
+                        <span className="btn-icon">👁</span>
+                        <span>{t('dashboard.view')}</span>
                       </Link>
                       {campaign.status !== 'suspended' && campaign.status !== 'cancelled' && (
-                        <Link to={`/campaigns/${campaign.id}/edit`} className="btn-edit">
-                          {t('dashboard.edit')}
+                        <Link to={`/campaigns/${campaign.id}/edit`} className="btn btn-edit">
+                          <span className="btn-icon">✎</span>
+                          <span>{t('dashboard.edit')}</span>
                         </Link>
                       )}
                       {campaign.status !== 'suspended' && campaign.status !== 'cancelled' && (
                         <>
                           <button
                             onClick={() => handleSuspend(campaign.id)}
-                            className="btn-suspend"
+                            className="btn btn-suspend"
                           >
-                            {t('dashboard.suspend')}
+                            <span className="btn-icon">⏸</span>
+                            <span>{t('dashboard.suspend')}</span>
                           </button>
                           <button
                             onClick={() => handleCancel(campaign.id)}
-                            className="btn-cancel"
+                            className="btn btn-cancel"
                           >
-                            {t('dashboard.cancel')}
+                            <span className="btn-icon">✕</span>
+                            <span>{t('dashboard.cancel')}</span>
                           </button>
                         </>
                       )}
@@ -356,7 +398,91 @@ function Dashboard() {
               <p>{t('dashboard.noCampaigns')}</p>
             )}
           </div>
-        ) : (
+        )}
+
+        {activeTab === 'moderation' && (user?.is_moderator || user?.is_staff) && (
+          <div className="moderation-section">
+            <h2>{t('moderation.pendingCampaigns', 'Pending Campaigns')}</h2>
+            {pendingCampaigns.length > 0 ? (
+              <div className="campaigns-list">
+                {pendingCampaigns.map((campaign) => (
+                  <div key={campaign.id} className="dashboard-campaign-card">
+                    <div className="campaign-info">
+                      <h3>{campaign.title}</h3>
+                      <p className="campaign-creator">
+                        <strong>{t('moderation.createdBy', 'Created by')}:</strong> {campaign.created_by?.email || 'Unknown'}
+                      </p>
+                      <p className="campaign-description">{campaign.short_description}</p>
+                      <p className="campaign-target">
+                        <strong>{t('moderation.targetAmount', 'Target')}:</strong> ${campaign.target_amount.toLocaleString()}
+                      </p>
+                      <p className="campaign-date">
+                        <strong>{t('moderation.createdAt', 'Created')}:</strong> {new Date(campaign.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="campaign-actions">
+                      {showNotesForm === campaign.id ? (
+                        <div className="notes-form-container">
+                          <textarea
+                            className="notes-textarea"
+                            placeholder={t('moderation.notesPlaceholder', 'Enter moderation notes (required for rejection)')}
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            rows={4}
+                          />
+                          <div className="notes-form-actions">
+                            <button
+                              onClick={() => handleApproveCampaign(campaign.id)}
+                              className="btn btn-approve"
+                            >
+                              <span className="btn-icon">✓</span>
+                              <span>{t('moderation.approve', 'Approve')}</span>
+                            </button>
+                            <button
+                              onClick={() => handleRejectCampaign(campaign.id)}
+                              className="btn btn-reject"
+                            >
+                              <span className="btn-icon">✕</span>
+                              <span>{t('moderation.reject', 'Reject')}</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowNotesForm(null)
+                                setNotes('')
+                              }}
+                              className="btn btn-cancel"
+                            >
+                              <span className="btn-icon">✕</span>
+                              <span>{t('common.cancel', 'Cancel')}</span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <Link to={`/campaign/${campaign.id}`} className="btn btn-view">
+                            <span className="btn-icon">👁</span>
+                            <span>{t('moderation.viewDetails', 'View Details')}</span>
+                          </Link>
+                          <button
+                            onClick={() => setShowNotesForm(campaign.id)}
+                            className="btn btn-moderate"
+                          >
+                            <span className="btn-icon">✓</span>
+                            <span>{t('moderation.moderate', 'Moderate')}</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="empty-message">{t('moderation.noPendingCampaigns', 'No pending campaigns to moderate.')}</p>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'news' && (
           <div className="news-section">
             <h2>{t('dashboard.newsManagement', 'News Management')}</h2>
             {news.length > 0 ? (
@@ -374,24 +500,28 @@ function Dashboard() {
                         {new Date(item.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="news-actions">
-                      <Link to={`/news/${item.id}`} className="btn-view">
-                        {t('dashboard.view')}
-                      </Link>
-                      <Link to={`/news/${item.id}/edit`} className="btn-edit">
-                        {t('dashboard.edit')}
-                      </Link>
+                        <div className="news-actions">
+                          <Link to={`/news/${item.id}`} className="btn btn-view">
+                            <span className="btn-icon">👁</span>
+                            <span>{t('dashboard.view')}</span>
+                          </Link>
+                          <Link to={`/news/${item.id}/edit`} className="btn btn-edit">
+                            <span className="btn-icon">✎</span>
+                            <span>{t('dashboard.edit')}</span>
+                          </Link>
                       <button
                         onClick={() => handleToggleNews(item.id, !item.published)}
-                        className={`btn-toggle ${item.published ? 'btn-unpublish' : 'btn-publish'}`}
+                        className={`btn btn-toggle ${item.published ? 'btn-unpublish' : 'btn-publish'}`}
                       >
-                        {item.published ? t('news.unpublish', 'Unpublish') : t('news.publish', 'Publish')}
+                        <span className="btn-icon">{item.published ? '🔓' : '🔒'}</span>
+                        <span>{item.published ? t('news.unpublish', 'Unpublish') : t('news.publish', 'Publish')}</span>
                       </button>
                       <button
                         onClick={() => handleDeleteNews(item.id, item.title)}
-                        className="btn-delete"
+                        className="btn btn-delete"
                       >
-                        {t('news.delete', 'Delete')}
+                        <span className="btn-icon">🗑</span>
+                        <span>{t('news.delete', 'Delete')}</span>
                       </button>
                     </div>
                   </div>
