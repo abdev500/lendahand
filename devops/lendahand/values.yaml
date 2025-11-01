@@ -1,6 +1,6 @@
 # Default values for lendahand
 global:
-  imageRegistry: ""
+  imageRegistry: "us-central1-docker.pkg.dev/test-donate-472114/donatereg/"
   imagePullSecrets: []
   storageClass: ""
 
@@ -10,9 +10,8 @@ backend:
   replicaCount: 1
   
   image:
-    registry: "us-central1-docker.pkg.dev/test-donate-472114/donatereg"
     repository: backend
-    tag: "c982c53a6c5ece415662cd887cb2a030227cdb6b"
+    tag: "268b0daacd8ce12ece548f66f05406264f558706"
     pullPolicy: IfNotPresent
   
   imagePullSecrets: []
@@ -23,7 +22,7 @@ backend:
     annotations: {}
   
   ingress:
-    enabled: false
+    enabled: true
     className: "nginx"
     annotations: {}
     hosts:
@@ -65,15 +64,6 @@ backend:
       port: http
     initialDelaySeconds: 10
     periodSeconds: 5
-  
-  volumes:
-    - name: media
-      persistentVolumeClaim:
-        claimName: backend-media
-  
-  volumeMounts:
-    - name: media
-      mountPath: /app/media
   
   nodeSelector: {}
   tolerations: []

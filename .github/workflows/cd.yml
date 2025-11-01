@@ -62,3 +62,10 @@ jobs:
             backend
           docker push "${DOCKER_TAG}"
           echo "Pushed:" "${DOCKER_TAG}"
+
+      - name: 'Deploy GKE'
+        run: |-
+          echo "Using a hash commit:"${GITHUB_SHA}
+          helm upgrade lendahand devops/lendahand --set backend.image.tag=${GITHUB_SHA}
+          kubectl get pods -A
+
