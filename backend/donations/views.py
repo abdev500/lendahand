@@ -11,11 +11,18 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from .models import Campaign, Donation, News, User
-from .serializers import (CampaignCreateSerializer, CampaignSerializer,
-                          DonationCreateSerializer, DonationSerializer,
-                          LoginSerializer, NewsCreateSerializer,
-                          NewsSerializer, PasswordChangeSerializer,
-                          UserRegistrationSerializer, UserSerializer)
+from .serializers import (
+    CampaignCreateSerializer,
+    CampaignSerializer,
+    DonationCreateSerializer,
+    DonationSerializer,
+    LoginSerializer,
+    NewsCreateSerializer,
+    NewsSerializer,
+    PasswordChangeSerializer,
+    UserRegistrationSerializer,
+    UserSerializer,
+)
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
