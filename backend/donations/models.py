@@ -37,7 +37,9 @@ class Campaign(models.Model):
     target_amount = models.DecimalField(max_digits=10, decimal_places=2)
     current_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="campaigns")
+    created_by = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="campaigns"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     moderation_notes = models.TextField(blank=True)
@@ -67,7 +69,9 @@ class CampaignMedia(models.Model):
         ("video", "Video"),
     ]
 
-    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="media")
+    campaign = models.ForeignKey(
+        Campaign, on_delete=models.CASCADE, related_name="media"
+    )
     media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES)
     file = models.FileField(upload_to="campaigns/")
     order = models.IntegerField(default=0)
@@ -84,7 +88,9 @@ class CampaignMedia(models.Model):
 class Donation(models.Model):
     """Donation records."""
 
-    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="donations")
+    campaign = models.ForeignKey(
+        Campaign, on_delete=models.CASCADE, related_name="donations"
+    )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     donor_name = models.CharField(max_length=100, blank=True)
     donor_email = models.EmailField(blank=True)
@@ -102,7 +108,9 @@ class Donation(models.Model):
 class ModerationHistory(models.Model):
     """History of moderation actions."""
 
-    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="moderation_history")
+    campaign = models.ForeignKey(
+        Campaign, on_delete=models.CASCADE, related_name="moderation_history"
+    )
     moderator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     action = models.CharField(max_length=20)  # 'approve', 'reject'
     notes = models.TextField(blank=True)
@@ -120,7 +128,9 @@ class News(models.Model):
 
     title = models.CharField(max_length=200, default="")
     content = models.TextField(default="")
-    image = models.ImageField(upload_to="news/", blank=True)  # Legacy field, kept for backward compatibility
+    image = models.ImageField(
+        upload_to="news/", blank=True
+    )  # Legacy field, kept for backward compatibility
     published = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -151,4 +161,7 @@ class NewsMedia(models.Model):
         unique_together = ["news", "order"]
 
     def __str__(self):
-        return f"{self.news.title if self.news.title else f'News {self.news.id}'} - {self.media_type}"
+        news_title = (
+            self.news.title if self.news.title else f"News {self.news.id}"
+        )
+        return f"{news_title} - {self.media_type}"

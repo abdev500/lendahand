@@ -8,12 +8,22 @@ from .models import Campaign, CampaignMedia, Donation, News, NewsMedia, User
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "email", "username", "phone", "address", "is_moderator", "is_staff"]
+        fields = [
+            "id",
+            "email",
+            "username",
+            "phone",
+            "address",
+            "is_moderator",
+            "is_staff",
+        ]
         read_only_fields = ["id", "is_moderator", "is_staff"]
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password = serializers.CharField(
+        write_only=True, required=True, validators=[validate_password]
+    )
     password2 = serializers.CharField(write_only=True, required=True)
 
     class Meta:
@@ -22,7 +32,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs["password"] != attrs["password2"]:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
+            raise serializers.ValidationError(
+                {"password": "Password fields didn't match."}
+            )
         return attrs
 
     def create(self, validated_data):
@@ -43,7 +55,9 @@ class LoginSerializer(serializers.Serializer):
         password = attrs.get("password")
 
         if email and password:
-            user = authenticate(request=self.context.get("request"), username=email, password=password)
+            user = authenticate(
+                request=self.context.get("request"), username=email, password=password
+            )
             if not user:
                 raise serializers.ValidationError("Invalid credentials")
             if not user.is_active:
@@ -88,15 +102,30 @@ class CampaignSerializer(serializers.ModelSerializer):
             "progress_percentage",
             "moderation_notes",
         ]
-        read_only_fields = ["id", "current_amount", "created_at", "updated_at", "created_by"]
+        read_only_fields = [
+            "id",
+            "current_amount",
+            "created_at",
+            "updated_at",
+            "created_by",
+        ]
 
 
 class CampaignCreateSerializer(serializers.ModelSerializer):
-    media_files = serializers.ListField(child=serializers.FileField(), write_only=True, required=False)
+    media_files = serializers.ListField(
+        child=serializers.FileField(), write_only=True, required=False
+    )
 
     class Meta:
         model = Campaign
-        fields = ["title", "short_description", "description", "target_amount", "status", "media_files"]
+        fields = [
+            "title",
+            "short_description",
+            "description",
+            "target_amount",
+            "status",
+            "media_files",
+        ]
 
     def create(self, validated_data):
         media_files = validated_data.pop("media_files", [])
@@ -104,15 +133,20 @@ class CampaignCreateSerializer(serializers.ModelSerializer):
         # Get status from validated_data if provided, otherwise default to "pending"
         created_by = self.context["request"].user
         status = validated_data.pop("status", "pending")
-        campaign = Campaign.objects.create(**validated_data, created_by=created_by, status=status)
+        campaign = Campaign.objects.create(
+            **validated_data, created_by=created_by, status=status
+        )
 
         for idx, media_file in enumerate(media_files[:6]):  # Limit to 6 files
             media_type = (
                 "video"
-                if hasattr(media_file, "content_type") and media_file.content_type.startswith("video/")
+                if hasattr(media_file, "content_type")
+                and media_file.content_type.startswith("video/")
                 else "image"
             )
-            CampaignMedia.objects.create(campaign=campaign, media_type=media_type, file=media_file, order=idx)
+            CampaignMedia.objects.create(
+                campaign=campaign, media_type=media_type, file=media_file, order=idx
+            )
 
         return campaign
 
@@ -132,11 +166,15 @@ class CampaignCreateSerializer(serializers.ModelSerializer):
                     break
                 media_type = (
                     "video"
-                    if hasattr(media_file, "content_type") and media_file.content_type.startswith("video/")
+                    if hasattr(media_file, "content_type")
+                    and media_file.content_type.startswith("video/")
                     else "image"
                 )
                 CampaignMedia.objects.create(
-                    campaign=instance, media_type=media_type, file=media_file, order=existing_count + idx
+                    campaign=instance,
+                    media_type=media_type,
+                    file=media_file,
+                    order=existing_count + idx,
                 )
 
         return instance
@@ -179,12 +217,23 @@ class NewsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = News
-        fields = ["id", "title", "content", "image", "media", "published", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "title",
+            "content",
+            "image",
+            "media",
+            "published",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class NewsCreateSerializer(serializers.ModelSerializer):
-    media_files = serializers.ListField(child=serializers.FileField(), write_only=True, required=False)
+    media_files = serializers.ListField(
+        child=serializers.FileField(), write_only=True, required=False
+    )
 
     class Meta:
         model = News
@@ -198,10 +247,13 @@ class NewsCreateSerializer(serializers.ModelSerializer):
         for idx, media_file in enumerate(media_files[:6]):  # Limit to 6 files
             media_type = (
                 "video"
-                if hasattr(media_file, "content_type") and media_file.content_type.startswith("video/")
+                if hasattr(media_file, "content_type")
+                and media_file.content_type.startswith("video/")
                 else "image"
             )
-            NewsMedia.objects.create(news=news, media_type=media_type, file=media_file, order=idx)
+            NewsMedia.objects.create(
+                news=news, media_type=media_type, file=media_file, order=idx
+            )
 
         return news
 
@@ -221,9 +273,15 @@ class NewsCreateSerializer(serializers.ModelSerializer):
                     break
                 media_type = (
                     "video"
-                    if hasattr(media_file, "content_type") and media_file.content_type.startswith("video/")
+                    if hasattr(media_file, "content_type")
+                    and media_file.content_type.startswith("video/")
                     else "image"
                 )
-                NewsMedia.objects.create(news=instance, media_type=media_type, file=media_file, order=existing_count + idx)
+                NewsMedia.objects.create(
+                    news=instance,
+                    media_type=media_type,
+                    file=media_file,
+                    order=existing_count + idx,
+                )
 
         return instance
