@@ -6,6 +6,7 @@ from .views import (
     DonationViewSet,
     NewsViewSet,
     UserViewSet,
+    health_check,
     login_view,
     logout_view,
     register,
@@ -20,6 +21,7 @@ router.register(r"news", NewsViewSet, basename="news")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("health/", health_check, name="health"),
     path("auth/register/", register, name="register"),
     path("auth/login/", login_view, name="login"),
     path("auth/logout/", logout_view, name="logout"),
