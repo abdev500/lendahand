@@ -1,0 +1,19 @@
+apiVersion: v2
+name: lendahand
+description: A Helm chart for Lend a Hand donation platform
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - donation
+  - fundraising
+  - django
+  - react
+maintainers:
+  - name: Lend a Hand Team
+dependencies:
+  - name: postgresql
+    version: "12.1.6"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+

@@ -1,0 +1,39 @@
+name: Helm Lint
+
+on:
+  pull_request:
+    paths:
+      - 'devops/**'
+      - '.github/workflows/helm-lint.yml'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'devops/**'
+
+jobs:
+  lint:
+    name: Lint Helm Charts
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: '3.12.0'
+      
+      - name: Install Helm dependencies
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+          helm dependency build devops/lendahand
+      
+      - name: Lint Helm chart
+        run: |
+          helm lint devops/lendahand
+          helm template lendahand devops/lendahand --dry-run
+
