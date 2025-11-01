@@ -1,4 +1,4 @@
-name: 'Build and Deploy to GKE Back'
+name: 'CD'
 
 
 on:
@@ -15,11 +15,10 @@ on:
 env:
   PROJECT_ID: 'test-donate-472114'
   GAR_LOCATION: 'us-central1'
-  GKE_CLUSTER: 'testdonate'
+  GKE_CLUSTER: 'lendahand'
   GKE_ZONE: 'us-central1-c'
-  DEPLOYMENT_NAME: 'gke-test'
   REPOSITORY: 'donatereg'
-  IMAGE: 'back'
+  IMAGE: 'backend'
 
 jobs:
   setup-build-publish-deploy:
@@ -53,7 +52,7 @@ jobs:
           location: ${{ env.GAR_LOCATION }}  
 
 
-      - name: 'Build and push Docker container PHP'
+      - name: 'Build and push Docker container back'
         run: |-
           DOCKER_TAG="${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE}:${GITHUB_SHA}"
 
@@ -61,5 +60,5 @@ jobs:
             --tag "${DOCKER_TAG}" \
             --build-arg GITHUB_SHA="${GITHUB_SHA}" \
             --build-arg GITHUB_REF="${GITHUB_REF}" \
-            back
+            backend
           docker push "${DOCKER_TAG}"
