@@ -20,7 +20,6 @@ env:
   DEPLOYMENT_NAME: 'gke-test'
   REPOSITORY: 'donatereg'
   IMAGE: 'back'
-  IMAGENGINX: 'back-nginx'
 
 jobs:
   setup-build-publish-deploy:
@@ -64,21 +63,3 @@ jobs:
             --build-arg GITHUB_REF="${GITHUB_REF}" \
             back
           docker push "${DOCKER_TAG}"
-
-      - name: 'Build and push Docker container NGINX'
-        run: |-
-          DOCKER_TAG="${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGENGINX}:${GITHUB_SHA}"
-
-          docker build -f back/Dockerfile.nginx \
-            --tag "${DOCKER_TAG}" \
-            --build-arg GITHUB_SHA="${GITHUB_SHA}" \
-            --build-arg GITHUB_REF="${GITHUB_REF}" \
-            back
-          docker push "${DOCKER_TAG}"
-
-      - name: 'Deploy to GKE'
-        run: |-
-          echo "Using a hash commit:"${GITHUB_SHA}
-          helm upgrade back devops/back --set image.tag=${GITHUB_SHA}
-          helm upgrade back-nginx devops/back-nginx --set image.tag=${GITHUB_SHA}
-          kubectl get pods -A
