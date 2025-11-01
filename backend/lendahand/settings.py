@@ -54,6 +54,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "donations.middleware.DisableCSRFForAPI",  # Exempt API from CSRF
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "donations.middleware.TokenAuthenticationMiddleware",  # Token auth for template views
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]

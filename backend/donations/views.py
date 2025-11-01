@@ -155,6 +155,61 @@ class CampaignViewSet(viewsets.ModelViewSet):
         campaign.save()
         return Response({"status": "campaign cancelled"})
 
+    @action(detail=True, methods=["post"])
+    def approve(self, request, pk=None):
+        """Approve a pending campaign. Only moderators/staff can approve."""
+        if not (request.user.is_moderator or request.user.is_staff):
+            raise PermissionDenied("Only moderators and staff can approve campaigns.")
+        
+        campaign = self.get_object()
+        if campaign.status != "pending":
+            return Response({"error": "Campaign is not pending moderation."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        moderation_notes = request.data.get("moderation_notes", "")
+        campaign.status = "approved"
+        campaign.moderation_notes = moderation_notes
+        campaign.save()
+        
+        # Create moderation history
+        from .models import ModerationHistory
+        ModerationHistory.objects.create(
+            campaign=campaign,
+            moderator=request.user,
+            action="approve",
+            notes=moderation_notes
+        )
+        
+        return Response({"status": "campaign approved", "campaign": CampaignSerializer(campaign).data})
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request, pk=None):
+        """Reject a pending campaign. Only moderators/staff can reject."""
+        if not (request.user.is_moderator or request.user.is_staff):
+            raise PermissionDenied("Only moderators and staff can reject campaigns.")
+        
+        campaign = self.get_object()
+        if campaign.status != "pending":
+            return Response({"error": "Campaign is not pending moderation."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        moderation_notes = request.data.get("moderation_notes", "")
+        if not moderation_notes:
+            return Response({"error": "Rejection reason is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        campaign.status = "rejected"
+        campaign.moderation_notes = moderation_notes
+        campaign.save()
+        
+        # Create moderation history
+        from .models import ModerationHistory
+        ModerationHistory.objects.create(
+            campaign=campaign,
+            moderator=request.user,
+            action="reject",
+            notes=moderation_notes
+        )
+        
+        return Response({"status": "campaign rejected", "campaign": CampaignSerializer(campaign).data})
+
 
 class DonationViewSet(viewsets.ModelViewSet):
     queryset = Donation.objects.all()
@@ -274,10 +329,12 @@ class NewsViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = News.objects.all()
         # Public users can only see published news
-        if not self.request.user.is_authenticated or not (self.request.user.is_moderator or self.request.user.is_staff):
+        if not self.request.user.is_authenticated:
+            queryset = queryset.filter(published=True)
+        elif not (self.request.user.is_moderator or self.request.user.is_staff):
             queryset = queryset.filter(published=True)
         # Moderators/staff can see all news (including unpublished)
-        return queryset
+        return queryset.order_by('-created_at')
 
     def perform_create(self, serializer):
         # Only moderators and staff can create news

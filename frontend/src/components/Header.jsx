@@ -142,12 +142,6 @@ function Header() {
                         <span className="dropdown-icon">👤</span>
                         {t('nav.settings')}
                       </Link>
-                      {user?.is_moderator && (
-                        <a href="/moderation/" target="_blank" onClick={() => setDropdownOpen(false)} className="dropdown-item">
-                          <span className="dropdown-icon">✅</span>
-                          {t('nav.moderation')}
-                        </a>
-                      )}
                       {user?.is_staff && (
                         <a href="/admin/" target="_blank" onClick={() => setDropdownOpen(false)} className="dropdown-item">
                           <span className="dropdown-icon">⚙️</span>

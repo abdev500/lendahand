@@ -79,6 +79,7 @@ const resources = {
       'dashboard.noCampaigns': 'You haven\'t created any campaigns yet.',
       'dashboard.createdSuccess': 'Campaign created successfully! It is now pending moderation and will be visible once approved.',
       'dashboard.updatedSuccess': 'Campaign updated successfully! It has been resubmitted for moderation.',
+      'dashboard.moderationNotes': 'Moderator Comments',
       'dashboard.suspendConfirm': 'Are you sure you want to suspend this campaign?',
       'dashboard.cancelConfirm': 'Are you sure you want to cancel this campaign?',
       'dashboard.suspendError': 'Error suspending campaign',
@@ -135,6 +136,24 @@ const resources = {
       'news.deletedSuccess': 'News article deleted successfully!',
       'news.deleteError': 'Error deleting news article. Please try again.',
       'dashboard.newsManagement': 'News Management',
+      
+      // Moderation
+      'moderation.title': 'Moderation',
+      'moderation.pendingCampaigns': 'Pending Campaigns',
+      'moderation.createdBy': 'Created by',
+      'moderation.targetAmount': 'Target',
+      'moderation.createdAt': 'Created',
+      'moderation.viewDetails': 'View Details',
+      'moderation.moderate': 'Moderate',
+      'moderation.approve': 'Approve',
+      'moderation.reject': 'Reject',
+      'moderation.notesPlaceholder': 'Enter moderation notes (required for rejection)',
+      'moderation.approveSuccess': 'Campaign approved successfully!',
+      'moderation.rejectSuccess': 'Campaign rejected successfully!',
+      'moderation.approveError': 'Error approving campaign',
+      'moderation.rejectError': 'Error rejecting campaign',
+      'moderation.rejectReasonRequired': 'Rejection reason is required',
+      'moderation.noPendingCampaigns': 'No pending campaigns to moderate.',
       
       // Login
       'login.title': 'Login',

@@ -7,7 +7,9 @@ import CampaignDetail from './pages/CampaignDetail'
 import CreateCampaign from './pages/CreateCampaign'
 import EditCampaign from './pages/EditCampaign'
 import News from './pages/News'
+import NewsDetail from './pages/NewsDetail'
 import Dashboard from './pages/Dashboard'
+import Moderation from './pages/Moderation'
 import Settings from './pages/Settings'
 import CreateNews from './pages/CreateNews'
 import EditNews from './pages/EditNews'
@@ -31,7 +33,9 @@ function App() {
           <Route path="/news" element={<News />} />
           <Route path="/news/new" element={<CreateNews />} />
           <Route path="/news/:id/edit" element={<EditNews />} />
+          <Route path="/news/:id" element={<NewsDetail />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/moderation" element={<Moderation />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
