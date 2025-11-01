@@ -1,7 +1,23 @@
 import axios from 'axios'
 
+// Get API URL from runtime config (set by entrypoint.sh) or use default
+const getApiBaseURL = () => {
+  // Check if runtime config is available (injected at container startup)
+  if (window.__RUNTIME_CONFIG__ && window.__RUNTIME_CONFIG__.REACT_APP_API_URL) {
+    const apiUrl = window.__RUNTIME_CONFIG__.REACT_APP_API_URL
+    // If it's a full URL, use it directly; otherwise treat as path
+    if (apiUrl.startsWith('http://') || apiUrl.startsWith('https://')) {
+      return apiUrl
+    }
+    // If it starts with /, use it as-is; otherwise prepend /
+    return apiUrl.startsWith('/') ? apiUrl : `/${apiUrl}`
+  }
+  // Default to /api if no runtime config
+  return '/api'
+}
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: getApiBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -34,7 +50,7 @@ api.interceptors.response.use(
       // It's HTML, likely an error page
       const status = error.response.status
       let message = `Server error (${status})`
-      
+
       if (status === 400) {
         message = 'Bad request. Please check your input.'
       } else if (status === 401) {
@@ -46,7 +62,7 @@ api.interceptors.response.use(
       } else if (status === 500) {
         message = 'Internal server error. Please try again later.'
       }
-      
+
       error.response.data = { error: message }
     }
     return Promise.reject(error)
@@ -54,4 +70,3 @@ api.interceptors.response.use(
 )
 
 export default api
-

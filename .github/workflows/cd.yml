@@ -19,6 +19,7 @@ env:
   GKE_ZONE: 'us-central1-c'
   REPOSITORY: 'donatereg'
   IMAGE: 'backend'
+  IMAGEFRONT: 'frontend'
 
 jobs:
   setup-build-publish-deploy:
@@ -63,9 +64,21 @@ jobs:
           docker push "${DOCKER_TAG}"
           echo "Pushed:" "${DOCKER_TAG}"
 
+      - name: 'Build and push Docker container frontend'
+        run: |-
+          DOCKER_TAG="${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGEFRONT}:${GITHUB_SHA}"
+          docker build \
+            --tag "${DOCKER_TAG}" \
+            --build-arg GITHUB_SHA="${GITHUB_SHA}" \
+            --build-arg GITHUB_REF="${GITHUB_REF}" \
+            frontend
+          docker push "${DOCKER_TAG}"
+          echo "Pushed:" "${DOCKER_TAG}"
+
+
       - name: 'Deploy GKE'
         run: |-
           echo "Using a hash commit:"${GITHUB_SHA}
-          helm upgrade lendahand devops/lendahand --set backend.image.tag=${GITHUB_SHA}
+          helm upgrade lendahand devops/lendahand --set backend.image.tag=${GITHUB_SHA} --set frontend.image.tag=${GITHUB_SHA}
           kubectl get pods -A
 
