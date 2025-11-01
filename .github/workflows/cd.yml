@@ -2,6 +2,8 @@ name: CD
 
 on:
   workflow_dispatch:
+    branches:
+      - devops
   push:
     branches:
       - main
