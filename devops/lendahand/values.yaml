@@ -33,9 +33,9 @@ backend:
     tls: []
   
   env:
-    DEBUG: "False"
+    DEBUG: "True"
     DJANGO_SECRET_KEY: "change-me-in-production"
-    DATABASE_URL: "postgresql://lendahand:changeme@postgresql:5432/lendahand"
+    DATABASE_URL: "postgresql://postgres:postgres@infra-postgresql:5432/getdonate"
     STRIPE_SECRET_KEY: ""
     STRIPE_PUBLISHABLE_KEY: ""
     STRIPE_WEBHOOK_SECRET: ""
@@ -87,18 +87,18 @@ frontend:
     annotations: {}
   
   ingress:
-    enabled: false
+    enabled: true
     className: "nginx"
     annotations: {}
     hosts:
-      - host: lendahand.me
+      - host: test.lendahand.me
         paths:
           - path: /
             pathType: Prefix
     tls: []
   
   env:
-    REACT_APP_API_URL: "http://backend:8000"
+    REACT_APP_API_URL: "http://api-test.lendahand.me"
   
   envFrom: []
   
