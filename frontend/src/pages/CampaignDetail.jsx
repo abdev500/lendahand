@@ -13,9 +13,6 @@ function CampaignDetail() {
   const [donations, setDonations] = useState([])
   const [loading, setLoading] = useState(true)
   const [donationAmount, setDonationAmount] = useState('')
-  const [donorName, setDonorName] = useState('')
-  const [donorEmail, setDonorEmail] = useState('')
-  const [isAnonymous, setIsAnonymous] = useState(true)
   const [processing, setProcessing] = useState(false)
   const success = searchParams.get('success')
 
@@ -73,9 +70,6 @@ function CampaignDetail() {
       const response = await api.post('/donations/create_checkout_session/', {
         campaign_id: parseInt(id),
         amount: parseFloat(donationAmount),
-        donor_name: donorName,
-        donor_email: donorEmail,
-        is_anonymous: isAnonymous,
       })
 
       // Redirect to Stripe Checkout
@@ -122,6 +116,29 @@ function CampaignDetail() {
           <div className="campaign-status-badge">
             Status: <span className={`status-${campaign.status}`}>{campaign.status}</span>
           </div>
+          
+          {/* Progress bar in header */}
+          <div className="campaign-header-progress">
+            <div className="progress-bar-large">
+              <div
+                className="progress-fill-large"
+                style={{ width: `${campaign.progress_percentage || 0}%` }}
+              />
+            </div>
+            <div className="progress-info-large">
+              <div className="progress-amount">
+                <span className="progress-label">Raised</span>
+                <span className="progress-value-raised">${(campaign.current_amount || 0).toLocaleString()}</span>
+              </div>
+              <div className="progress-percentage-large">
+                {campaign.progress_percentage || 0}%
+              </div>
+              <div className="progress-amount">
+                <span className="progress-label">Goal</span>
+                <span className="progress-value-goal">${(campaign.target_amount || 0).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="campaign-layout">
@@ -141,26 +158,31 @@ function CampaignDetail() {
 
           <div className="campaign-sidebar">
             <div className="donation-card">
-              <h3>{t('campaign.progress')}</h3>
-              <div className="progress-bar">
+              <h3>{t('campaign.progress') || 'Campaign Progress'}</h3>
+              <div className="progress-bar-sidebar">
                 <div
-                  className="progress-fill"
-                  style={{ width: `${campaign.progress_percentage}%` }}
+                  className="progress-fill-sidebar"
+                  style={{ width: `${campaign.progress_percentage || 0}%` }}
                 />
               </div>
-              <div className="progress-stats">
-                <div>
-                  <span className="label">{t('campaign.raised')}</span>
-                  <span className="value">${campaign.current_amount.toLocaleString()}</span>
+              <div className="progress-stats-sidebar">
+                <div className="progress-stat-item">
+                  <span className="label">{t('campaign.raised') || 'Raised'}</span>
+                  <span className="value-raised">${(campaign.current_amount || 0).toLocaleString()}</span>
                 </div>
-                <div>
-                  <span className="label">{t('campaign.target')}</span>
-                  <span className="value">${campaign.target_amount.toLocaleString()}</span>
+                <div className="progress-stat-item">
+                  <span className="label">{t('campaign.target') || 'Target'}</span>
+                  <span className="value-target">${(campaign.target_amount || 0).toLocaleString()}</span>
+                </div>
+                <div className="progress-stat-item progress-percentage-stat">
+                  <span className="label">Progress</span>
+                  <span className="value-percentage">{campaign.progress_percentage || 0}%</span>
                 </div>
               </div>
 
               <form onSubmit={handleDonate} className="donation-form">
                 <h3>Make a Donation</h3>
+                <p className="donation-note">All donations are anonymous</p>
                 <input
                   type="number"
                   placeholder="Amount (USD)"
@@ -170,28 +192,8 @@ function CampaignDetail() {
                   min="1"
                   step="0.01"
                 />
-                <input
-                  type="text"
-                  placeholder="Your Name (optional)"
-                  value={donorName}
-                  onChange={(e) => setDonorName(e.target.value)}
-                />
-                <input
-                  type="email"
-                  placeholder="Your Email (optional)"
-                  value={donorEmail}
-                  onChange={(e) => setDonorEmail(e.target.value)}
-                />
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={isAnonymous}
-                    onChange={(e) => setIsAnonymous(e.target.checked)}
-                  />
-                  Donate anonymously
-                </label>
                 <button type="submit" className="btn-donate" disabled={processing}>
-                  {processing ? 'Processing...' : t('campaign.donate')}
+                  {processing ? 'Processing...' : t('campaign.donate') || 'Donate Now'}
                 </button>
               </form>
             </div>
@@ -211,14 +213,7 @@ function CampaignDetail() {
               <tbody>
                 {donations.map((donation) => (
                   <tr key={donation.id}>
-                    <td>
-                      ${donation.amount.toLocaleString()}
-                      {donation.is_anonymous && (
-                        <span className="anonymous-badge">
-                          {t('campaign.donation.anonymous')}
-                        </span>
-                      )}
-                    </td>
+                    <td>${donation.amount.toLocaleString()}</td>
                     <td>{new Date(donation.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}
