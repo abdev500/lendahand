@@ -5,9 +5,8 @@ from pathlib import Path
 from django.contrib.auth import get_user_model
 from django.core.files import File
 from django.core.management.base import BaseCommand
-from PIL import Image
-
 from donations.models import Campaign, CampaignMedia, News, NewsMedia
+from PIL import Image
 
 User = get_user_model()
 
