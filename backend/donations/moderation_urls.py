@@ -1,7 +1,12 @@
 from django.urls import path
 
-from .moderation_views import (moderate_campaign, moderation_dashboard,
-                               news_management, toggle_news, user_management)
+from .moderation_views import (
+    moderate_campaign,
+    moderation_dashboard,
+    news_management,
+    toggle_news,
+    user_management,
+)
 
 app_name = "moderation"
 

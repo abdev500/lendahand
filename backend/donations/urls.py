@@ -1,8 +1,16 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import (CampaignViewSet, DonationViewSet, NewsViewSet, UserViewSet,
-                    login_view, logout_view, register, stripe_webhook)
+from .views import (
+    CampaignViewSet,
+    DonationViewSet,
+    NewsViewSet,
+    UserViewSet,
+    login_view,
+    logout_view,
+    register,
+    stripe_webhook,
+)
 
 router = DefaultRouter()
 router.register(r"users", UserViewSet, basename="user")
