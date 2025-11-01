@@ -1,0 +1,49 @@
+postgresql:
+  enabled: true
+  image:
+    repository: bitnamisecure/postgresql
+    tag: latest
+
+    #registry: docker.io
+    #repository: postgres
+    #tag: "16.4"
+  auth:
+    username: postgres
+    database: getdonate
+    password: postgres   # use a secret for prod
+  primary:
+    containerSecurityContext:
+      enabled: true
+      readOnlyRootFilesystem: true
+    extraVolumes:
+      - name: run-postgresql
+        emptyDir: {}                 # or { medium: Memory } to use tmpfs
+    extraVolumeMounts:
+      - name: run-postgresql
+        mountPath: /var/run/postgresql
+    persistence:
+      enabled: true
+      size: 8Gi
+
+ingress-nginx:
+  enabled: true
+  controller:
+    service:
+      externalTrafficPolicy: Local
+      enableHttp: true
+      enableHttps: true
+      type: LoadBalancer
+      loadBalancerIP: 35.223.46.33
+#      annotations: 
+#        nginx.ingress.kubernetes.io/enable-cors: "true"
+      ports:
+        https: 443
+
+
+cert-manager:
+  enabled: true
+  installCRDs: true
+  global:
+    leaderElection:
+      namespace: cert-manager
+  namespace: cert-manager

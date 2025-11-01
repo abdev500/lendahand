@@ -11,9 +11,3 @@ keywords:
   - react
 maintainers:
   - name: Lend a Hand Team
-dependencies:
-  - name: postgresql
-    version: "12.1.6"
-    repository: "https://charts.bitnami.com/bitnami"
-    condition: postgresql.enabled
-

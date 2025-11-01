@@ -1,24 +1,19 @@
-name: 'CD'
-
+name: 'Build and Deploy to GKE Infra'
 
 on:
   workflow_dispatch:
   push:
+    paths:
+      - "devops/infra/**"
     branches:
       - 'main'
       - 'cicd'
-    paths:
-      - "backend/**"
-      - "devops/**"
-
 
 env:
   PROJECT_ID: 'test-donate-472114'
   GAR_LOCATION: 'us-central1'
   GKE_CLUSTER: 'lendahand'
   GKE_ZONE: 'us-central1-c'
-  REPOSITORY: 'donatereg'
-  IMAGE: 'backend'
 
 jobs:
   setup-build-publish-deploy:
@@ -51,13 +46,7 @@ jobs:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GAR_LOCATION }}  
 
-
-      - name: 'Build and push Docker container back'
+      - name: 'Deploy to GKE'
         run: |-
-          DOCKER_TAG="${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE}:${GITHUB_SHA}"
-          docker build \
-            --tag "${DOCKER_TAG}" \
-            --build-arg GITHUB_SHA="${GITHUB_SHA}" \
-            --build-arg GITHUB_REF="${GITHUB_REF}" \
-            backend
-          docker push "${DOCKER_TAG}"
+          helm upgrade infra devops/infra 
+          kubectl get pods -A
