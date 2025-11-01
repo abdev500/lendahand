@@ -11,13 +11,14 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from .models import Campaign, Donation, News, User
+from .models import Campaign, Donation, News, NewsMedia, User
 from .serializers import (
     CampaignCreateSerializer,
     CampaignSerializer,
     DonationCreateSerializer,
     DonationSerializer,
     LoginSerializer,
+    NewsCreateSerializer,
     NewsSerializer,
     PasswordChangeSerializer,
     UserRegistrationSerializer,
@@ -118,7 +119,10 @@ class CampaignViewSet(viewsets.ModelViewSet):
 
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user, status="pending")
+        # Don't pass created_by and status here - let the serializer handle it
+        # This avoids duplicate keyword arguments when the serializer's create() method
+        # also tries to set created_by
+        serializer.save()
 
     def perform_update(self, serializer):
         instance = serializer.instance
@@ -258,16 +262,40 @@ class DonationViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class NewsViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = News.objects.filter(published=True)
-    serializer_class = NewsSerializer
-    permission_classes = [permissions.AllowAny]
+class NewsViewSet(viewsets.ModelViewSet):
+    queryset = News.objects.all()
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_serializer_class(self):
+        if self.action == "create" or self.action == "update":
+            return NewsCreateSerializer
+        return NewsSerializer
 
     def get_queryset(self):
-        queryset = News.objects.filter(published=True)
-        # Use current language for translations
-        lang = translation.get_language()
-        return queryset.translated(lang) if lang else queryset
+        queryset = News.objects.all()
+        # Public users can only see published news
+        if not self.request.user.is_authenticated or not (self.request.user.is_moderator or self.request.user.is_staff):
+            queryset = queryset.filter(published=True)
+        # Moderators/staff can see all news (including unpublished)
+        return queryset
+
+    def perform_create(self, serializer):
+        # Only moderators and staff can create news
+        if not (self.request.user.is_moderator or self.request.user.is_staff):
+            raise PermissionDenied("Only moderators and staff can create news.")
+        serializer.save()
+
+    def perform_update(self, serializer):
+        # Only moderators and staff can update news
+        if not (self.request.user.is_moderator or self.request.user.is_staff):
+            raise PermissionDenied("Only moderators and staff can update news.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        # Only moderators and staff can delete news
+        if not (self.request.user.is_moderator or self.request.user.is_staff):
+            raise PermissionDenied("Only moderators and staff can delete news.")
+        instance.delete()
 
 
 @api_view(["POST"])

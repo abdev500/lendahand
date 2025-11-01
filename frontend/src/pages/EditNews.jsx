@@ -6,7 +6,7 @@ import RichTextEditor from '../components/RichTextEditor'
 import MediaUploader from '../components/MediaUploader'
 import './CreateCampaign.css'
 
-function EditCampaign() {
+function EditNews() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { id } = useParams()
@@ -15,17 +15,15 @@ function EditCampaign() {
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     title: '',
-    short_description: '',
-    description: '',
-    target_amount: '',
+    content: '',
+    published: false,
   })
   const [mediaFiles, setMediaFiles] = useState([])
   const [existingMedia, setExistingMedia] = useState([])
-  const [campaign, setCampaign] = useState(null)
 
   useEffect(() => {
     checkAuth()
-    fetchCampaign()
+    fetchNews()
   }, [id])
 
   const checkAuth = async () => {
@@ -36,57 +34,48 @@ function EditCampaign() {
     }
 
     try {
-      await api.get('/users/me/')
+      const response = await api.get('/users/me/')
+      // Only moderators and staff can edit news
+      if (!response.data.is_moderator && !response.data.is_staff) {
+        navigate('/news')
+        return
+      }
     } catch (error) {
       localStorage.removeItem('token')
       navigate('/login')
     }
   }
 
-  const fetchCampaign = async () => {
+  const fetchNews = async () => {
     try {
-      const response = await api.get(`/campaigns/${id}/`)
-      const userResponse = await api.get('/users/me/')
-      const currentUser = userResponse.data
-      
-      // Allow editing if user is the creator OR is moderator/staff
-      const isCreator = response.data.created_by.id === currentUser.id
-      const isModeratorOrStaff = currentUser.is_moderator || currentUser.is_staff
-      
-      if (!isCreator && !isModeratorOrStaff) {
-        navigate('/dashboard')
-        return
-      }
-
-      setCampaign(response.data)
+      const response = await api.get(`/news/${id}/`)
       setFormData({
         title: response.data.title,
-        short_description: response.data.short_description,
-        description: response.data.description,
-        target_amount: response.data.target_amount,
+        content: response.data.content,
+        published: response.data.published,
       })
       setExistingMedia(response.data.media || [])
       setLoading(false)
     } catch (error) {
-      console.error('Error fetching campaign:', error)
-      navigate('/dashboard')
+      console.error('Error fetching news:', error)
+      navigate('/news')
     }
   }
 
   const handleChange = (e) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: value,
     })
   }
 
-  const handleDescriptionChange = (value) => {
+  const handleContentChange = (value) => {
     setFormData({
       ...formData,
-      description: value,
+      content: value,
     })
   }
-
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -96,9 +85,8 @@ function EditCampaign() {
     try {
       const formDataToSend = new FormData()
       formDataToSend.append('title', formData.title)
-      formDataToSend.append('short_description', formData.short_description)
-      formDataToSend.append('description', formData.description)
-      formDataToSend.append('target_amount', formData.target_amount)
+      formDataToSend.append('content', formData.content)
+      formDataToSend.append('published', formData.published)
 
       if (mediaFiles.length > 0) {
         mediaFiles.forEach((file) => {
@@ -106,21 +94,19 @@ function EditCampaign() {
         })
       }
 
-      await api.patch(`/campaigns/${id}/`, formDataToSend)
+      await api.patch(`/news/${id}/`, formDataToSend)
 
       // Redirect to dashboard with success message
-      navigate('/dashboard?campaign_updated=true')
+      navigate('/dashboard?news_updated=true')
     } catch (err) {
-      console.error('Error updating campaign:', err)
-      let errorMessage = t('campaign.editError')
+      console.error('Error updating news:', err)
+      let errorMessage = t('news.editError', 'Failed to update news. Please try again.')
       
       if (err.response?.data) {
         const data = err.response.data
         if (typeof data === 'string') {
-          // Handle string error messages
           errorMessage = data
         } else if (typeof data === 'object') {
-          // Handle object error messages
           const errors = Object.values(data).flat()
           errorMessage = errors.length > 0 ? errors.join(', ') : errorMessage
         }
@@ -140,16 +126,11 @@ function EditCampaign() {
   return (
     <div className="create-campaign">
       <div className="container">
-        <h1>{t('campaign.edit')}</h1>
+        <h1>{t('news.edit', 'Edit News')}</h1>
         {error && <div className="error-message">{error}</div>}
-        {(campaign?.status === 'approved' || campaign?.status === 'rejected') && (
-          <div className="info-message">
-            {t('campaign.editNote')}
-          </div>
-        )}
         <form onSubmit={handleSubmit} className="campaign-form">
           <div className="form-group">
-            <label htmlFor="title">{t('campaign.title')} *</label>
+            <label htmlFor="title">{t('news.title')} *</label>
             <input
               type="text"
               id="title"
@@ -157,49 +138,21 @@ function EditCampaign() {
               value={formData.title}
               onChange={handleChange}
               required
-              placeholder={t('campaign.title')}
+              placeholder={t('news.title')}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="short_description">{t('campaign.shortDescription')} *</label>
-            <textarea
-              id="short_description"
-              name="short_description"
-              value={formData.short_description}
-              onChange={handleChange}
-              required
-              rows="3"
-              placeholder={t('campaign.shortDescription')}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="description">{t('campaign.description')} *</label>
+            <label htmlFor="content">{t('news.content', 'Content')} *</label>
             <RichTextEditor
-              value={formData.description}
-              onChange={handleDescriptionChange}
-              placeholder={t('campaign.description')}
+              value={formData.content}
+              onChange={handleContentChange}
+              placeholder={t('news.content', 'Write your news content here...')}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="target_amount">{t('campaign.targetAmount')} *</label>
-            <input
-              type="number"
-              id="target_amount"
-              name="target_amount"
-              value={formData.target_amount}
-              onChange={handleChange}
-              required
-              min="1"
-              step="0.01"
-              placeholder="50000"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>{t('campaign.mediaFiles')}</label>
+            <label>Media Files (Images/Videos) - Up to 6 files total</label>
             <MediaUploader
               existingMedia={existingMedia}
               selectedFiles={mediaFiles}
@@ -208,13 +161,25 @@ function EditCampaign() {
             />
           </div>
 
+          <div className="form-group">
+            <label>
+              <input
+                type="checkbox"
+                name="published"
+                checked={formData.published}
+                onChange={handleChange}
+              />
+              {t('news.published', 'Published')}
+            </label>
+          </div>
+
           <div className="form-actions">
             <button type="submit" disabled={saving} className="btn-submit">
-              {saving ? t('campaign.saving') : t('campaign.save')}
+              {saving ? t('news.saving', 'Saving...') : t('news.save', 'Save Changes')}
             </button>
             <button
               type="button"
-              onClick={() => navigate(`/campaign/${id}`)}
+              onClick={() => navigate('/news')}
               className="btn-cancel"
             >
               {t('common.cancel')}
@@ -226,5 +191,5 @@ function EditCampaign() {
   )
 }
 
-export default EditCampaign
+export default EditNews
 

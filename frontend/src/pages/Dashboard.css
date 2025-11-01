@@ -18,6 +18,35 @@
   margin-bottom: 0.5rem;
 }
 
+.dashboard-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--color-light-gray);
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-gray);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+
+.tab-button:hover {
+  color: var(--color-dark-gray);
+}
+
+.tab-button.active {
+  color: var(--color-red);
+  border-bottom-color: var(--color-red);
+}
+
 .dashboard-actions {
   margin-bottom: 3rem;
 }
@@ -191,6 +220,121 @@
 }
 
 .btn-cancel:hover {
+  background: #c82333;
+}
+
+.news-section {
+  margin-top: 2rem;
+}
+
+.news-section h2 {
+  margin-bottom: 2rem;
+  font-size: 2rem;
+}
+
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dashboard-news-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-light-gray);
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: box-shadow 0.2s;
+}
+
+.dashboard-news-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.news-info {
+  flex: 1;
+}
+
+.news-info h3 {
+  margin-bottom: 0.5rem;
+  color: var(--color-dark-gray);
+}
+
+.news-status {
+  margin-bottom: 0.5rem;
+}
+
+.news-status .status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.news-status .status-badge.published {
+  background: #28a745;
+  color: white;
+}
+
+.news-status .status-badge.unpublished {
+  background: #6c757d;
+  color: white;
+}
+
+.news-date {
+  color: var(--color-gray);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.news-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btn-toggle {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-publish {
+  background: #28a745;
+  color: white;
+}
+
+.btn-publish:hover {
+  background: #218838;
+}
+
+.btn-unpublish {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-unpublish:hover {
+  background: #5a6268;
+}
+
+.btn-delete {
+  background: #dc3545;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-delete:hover {
   background: #c82333;
 }
 

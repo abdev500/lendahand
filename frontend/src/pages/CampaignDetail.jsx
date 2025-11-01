@@ -76,17 +76,17 @@ function CampaignDetail() {
       window.location.href = response.data.url
     } catch (error) {
       console.error('Error creating checkout session:', error)
-      alert('Error processing donation. Please try again.')
+      alert(t('common.donationError'))
       setProcessing(false)
     }
   }
 
   if (loading) {
-    return <div className="container">Loading...</div>
+    return <div className="container">{t('common.loading')}</div>
   }
 
   if (!campaign) {
-    return <div className="container">Campaign not found</div>
+    return <div className="container">{t('campaign.notFound')}</div>
   }
 
   // Check if campaign is visible (only approved campaigns are visible to public)
@@ -98,15 +98,15 @@ function CampaignDetail() {
       <div className="container">
         {success === 'true' && (
           <div className="success-message">
-            Thank you for your donation!
+            {t('campaign.donation.success')}
           </div>
         )}
         
         {(isPending || isDraft) && (
           <div className="warning-message">
             {isPending 
-              ? 'This campaign is pending moderation and will be visible to the public once approved.'
-              : 'This campaign is a draft and not yet submitted for moderation.'}
+              ? t('campaign.pendingWarning')
+              : t('campaign.draftWarning')}
           </div>
         )}
         
@@ -114,7 +114,7 @@ function CampaignDetail() {
           <h1>{campaign.title}</h1>
           <p className="campaign-short">{campaign.short_description}</p>
           <div className="campaign-status-badge">
-            Status: <span className={`status-${campaign.status}`}>{campaign.status}</span>
+            {t('dashboard.status')}: <span className={`status-${campaign.status}`}>{campaign.status}</span>
           </div>
           
           {/* Progress bar in header */}
@@ -127,14 +127,14 @@ function CampaignDetail() {
             </div>
             <div className="progress-info-large">
               <div className="progress-amount">
-                <span className="progress-label">Raised</span>
+                <span className="progress-label">{t('campaign.raised')}</span>
                 <span className="progress-value-raised">${(campaign.current_amount || 0).toLocaleString()}</span>
               </div>
               <div className="progress-percentage-large">
                 {campaign.progress_percentage || 0}%
               </div>
               <div className="progress-amount">
-                <span className="progress-label">Goal</span>
+                <span className="progress-label">{t('campaign.target')}</span>
                 <span className="progress-value-goal">${(campaign.target_amount || 0).toLocaleString()}</span>
               </div>
             </div>
@@ -151,7 +151,7 @@ function CampaignDetail() {
               {campaign.description ? (
                 <div dangerouslySetInnerHTML={{ __html: campaign.description }} />
               ) : (
-                <p>No description provided.</p>
+                <p>{t('campaign.noDescription')}</p>
               )}
             </div>
           </div>
@@ -167,25 +167,25 @@ function CampaignDetail() {
               </div>
               <div className="progress-stats-sidebar">
                 <div className="progress-stat-item">
-                  <span className="label">{t('campaign.raised') || 'Raised'}</span>
+                  <span className="label">{t('campaign.raised')}</span>
                   <span className="value-raised">${(campaign.current_amount || 0).toLocaleString()}</span>
                 </div>
                 <div className="progress-stat-item">
-                  <span className="label">{t('campaign.target') || 'Target'}</span>
+                  <span className="label">{t('campaign.target')}</span>
                   <span className="value-target">${(campaign.target_amount || 0).toLocaleString()}</span>
                 </div>
                 <div className="progress-stat-item progress-percentage-stat">
-                  <span className="label">Progress</span>
+                  <span className="label">{t('campaign.progress')}</span>
                   <span className="value-percentage">{campaign.progress_percentage || 0}%</span>
                 </div>
               </div>
 
               <form onSubmit={handleDonate} className="donation-form">
-                <h3>Make a Donation</h3>
-                <p className="donation-note">All donations are anonymous</p>
+                <h3>{t('campaign.donate')}</h3>
+                <p className="donation-note">{t('campaign.anonymousDonations')}</p>
                 <input
                   type="number"
-                  placeholder="Amount (USD)"
+                  placeholder={t('common.placeholder')}
                   value={donationAmount}
                   onChange={(e) => setDonationAmount(e.target.value)}
                   required
@@ -193,7 +193,7 @@ function CampaignDetail() {
                   step="0.01"
                 />
                 <button type="submit" className="btn-donate" disabled={processing}>
-                  {processing ? 'Processing...' : t('campaign.donate') || 'Donate Now'}
+                  {processing ? t('campaign.processing') : t('campaign.donate')}
                 </button>
               </form>
             </div>

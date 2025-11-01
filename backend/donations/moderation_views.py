@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Campaign, ModerationHistory, User
+from .models import Campaign, ModerationHistory, News, User
 
 
 def is_moderator(user):
@@ -66,3 +66,29 @@ def user_management(request):
         "search_query": search_query,
     }
     return render(request, "moderation/users.html", context)
+
+
+@user_passes_test(is_moderator)
+def news_management(request):
+    """News management page for moderators."""
+    all_news = News.objects.all().order_by("-created_at")
+    published_news = News.objects.filter(published=True).order_by("-created_at")[:10]
+    unpublished_news = News.objects.filter(published=False).order_by("-created_at")[:10]
+
+    context = {
+        "all_news": all_news,
+        "published_news": published_news,
+        "unpublished_news": unpublished_news,
+    }
+    return render(request, "moderation/news.html", context)
+
+
+@user_passes_test(is_moderator)
+def toggle_news(request, news_id):
+    """Toggle news published status."""
+    news = get_object_or_404(News, id=news_id)
+    if request.method == "POST":
+        news.published = not news.published
+        news.save()
+        messages.success(request, f'News "{news.title}" has been {"published" if news.published else "unpublished"}.')
+    return redirect("moderation:news")
