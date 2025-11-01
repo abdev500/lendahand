@@ -99,20 +99,29 @@ function EditCampaign() {
         })
       }
 
-      await api.patch(`/campaigns/${id}/`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
+      await api.patch(`/campaigns/${id}/`, formDataToSend)
 
       // Redirect to dashboard with success message
       navigate('/dashboard?campaign_updated=true')
     } catch (err) {
-      const errorMessage = err.response?.data || {}
-      setError(
-        Object.values(errorMessage).flat().join(', ') ||
-        'Failed to update campaign. Please try again.'
-      )
+      console.error('Error updating campaign:', err)
+      let errorMessage = 'Failed to update campaign. Please try again.'
+      
+      if (err.response?.data) {
+        const data = err.response.data
+        if (typeof data === 'string') {
+          // Handle string error messages
+          errorMessage = data
+        } else if (typeof data === 'object') {
+          // Handle object error messages
+          const errors = Object.values(data).flat()
+          errorMessage = errors.length > 0 ? errors.join(', ') : errorMessage
+        }
+      } else if (err.message) {
+        errorMessage = err.message
+      }
+      
+      setError(errorMessage)
       setSaving(false)
     }
   }
