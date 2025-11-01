@@ -44,3 +44,8 @@ Thumbs.db
 
 # GitHub Actions artifacts
 .github/workflows/.DS_Store
+
+# GitHub Actions setup files
+devops/.github-secrets.env
+devops/.*-key.json
+devops/*-key.json
