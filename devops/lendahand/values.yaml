@@ -11,7 +11,7 @@ backend:
   
   image:
     repository: backend
-    tag: "268b0daacd8ce12ece548f66f05406264f558706"
+    tag: 98da23a27778a9c272e6d54b8ac87096659e440d
     pullPolicy: IfNotPresent
   
   imagePullSecrets: []
@@ -76,7 +76,7 @@ frontend:
   
   image:
     repository: frontend
-    tag: "latest"
+    tag: 98da23a27778a9c272e6d54b8ac87096659e440d
     pullPolicy: IfNotPresent
   
   imagePullSecrets: []
