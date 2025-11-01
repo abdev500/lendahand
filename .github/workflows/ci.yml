@@ -37,12 +37,12 @@ jobs:
           pip install flake8 black isort
       
       - name: Run flake8
-        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --max-line-length=120
       
       - name: Check code formatting
         run: |
-          black --check .
-          isort --check-only .
+          black --check --line-length 120 .
+          isort --check-only --profile black .
 
   lint-frontend:
     name: Lint Frontend
