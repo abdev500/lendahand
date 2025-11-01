@@ -21,43 +21,43 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+
     outputs:
       image-tag: ${{ steps.meta.outputs.tags }}
       image-digest: ${{ steps.build.outputs.digest }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ github.ref == 'refs/heads/main' && secrets.GCP_SA_KEY_PROD || secrets.GCP_SA_KEY_DEV }}
-      
+
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
-      
+
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker
-      
+
       - name: Log in to Google Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.GCR_REGISTRY }}
           username: _json_key
           password: ${{ github.ref == 'refs/heads/main' && secrets.GCP_SA_KEY_PROD || secrets.GCP_SA_KEY_DEV }}
-      
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -71,7 +71,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
-      
+
       - name: Build and push Docker image
         id: build
         uses: docker/build-push-action@v5
@@ -91,42 +91,62 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+
     outputs:
       image-tag: ${{ steps.meta.outputs.tags }}
       image-digest: ${{ steps.build.outputs.digest }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
-      
+
       - name: Install dependencies
         working-directory: ./frontend
         run: npm ci
-      
+
       - name: Build frontend
         working-directory: ./frontend
         env:
           REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL || 'http://localhost:8000' }}
         run: npm run build
-      
+
+      - name: Move build output to frontend/dist for Docker
+        run: |
+          # Vite outputs to ../backend/static by default (configured in vite.config.js)
+          # We need it in frontend/dist for Docker build
+          if [ -d "backend/static" ]; then
+            echo "Moving build output from backend/static to frontend/dist"
+            mkdir -p frontend/dist
+            cp -r backend/static/* frontend/dist/
+            echo "✓ Build output moved to frontend/dist"
+            ls -la frontend/dist/ | head -10
+          elif [ -d "frontend/dist" ]; then
+            echo "✓ Build output already in frontend/dist"
+          else
+            echo "ERROR: Build output not found in either backend/static or frontend/dist!"
+            echo "Checking what was created:"
+            ls -la frontend/ || true
+            ls -la backend/static/ || echo "backend/static doesn't exist"
+            exit 1
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -140,7 +160,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
-      
+
       - name: Create Dockerfile for frontend
         run: |
           cat > Dockerfile.frontend << 'EOF'
@@ -150,7 +170,7 @@ jobs:
           EXPOSE 80
           CMD ["nginx", "-g", "daemon off;"]
           EOF
-      
+
       - name: Build and push Docker image
         id: build
         uses: docker/build-push-action@v5
@@ -172,39 +192,39 @@ jobs:
     environment:
       name: development
       url: https://dev.lendahand.me
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY_DEV }}
-      
+
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID_DEV }}
-      
+
       - name: Configure kubectl for GKE
         uses: google-github-actions/get-gke-credentials@v2
         with:
           cluster_name: ${{ secrets.GKE_CLUSTER_NAME_DEV }}
           location: ${{ secrets.GKE_LOCATION_DEV }}
           project_id: ${{ secrets.GCP_PROJECT_ID_DEV }}
-      
+
       - name: Set up Helm
         uses: azure/setup-helm@v3
         with:
           version: '3.12.0'
-      
+
       - name: Install Helm dependencies
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami
           helm repo update
           helm dependency build devops/lendahand
-      
+
       - name: Deploy with Helm
         run: |
           helm upgrade --install lendahand ./devops/lendahand \
@@ -226,39 +246,39 @@ jobs:
     environment:
       name: production
       url: https://lendahand.me
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY_PROD }}
-      
+
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID_PROD }}
-      
+
       - name: Configure kubectl for GKE
         uses: google-github-actions/get-gke-credentials@v2
         with:
           cluster_name: ${{ secrets.GKE_CLUSTER_NAME_PROD }}
           location: ${{ secrets.GKE_LOCATION_PROD }}
           project_id: ${{ secrets.GCP_PROJECT_ID_PROD }}
-      
+
       - name: Set up Helm
         uses: azure/setup-helm@v3
         with:
           version: '3.12.0'
-      
+
       - name: Install Helm dependencies
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami
           helm repo update
           helm dependency build devops/lendahand
-      
+
       - name: Deploy with Helm
         run: |
           helm upgrade --install lendahand ./devops/lendahand \
@@ -272,4 +292,3 @@ jobs:
             --wait \
             --timeout 10m \
             --atomic
-
