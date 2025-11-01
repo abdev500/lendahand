@@ -211,9 +211,7 @@ class Command(BaseCommand):
 
         # Create campaigns
         for idx, campaign_data in enumerate(campaigns_data):
-            campaign, created = Campaign.objects.get_or_create(
-                title=campaign_data["title"], defaults=campaign_data
-            )
+            campaign, created = Campaign.objects.get_or_create(title=campaign_data["title"], defaults=campaign_data)
 
             # Get appropriate images for this campaign
             campaign_title = campaign_data["title"]
@@ -258,11 +256,7 @@ class Command(BaseCommand):
                             media.save()
                     else:
                         # Fallback: create a simple colored image if file doesn't exist
-                        self.stdout.write(
-                            self.style.WARNING(
-                                f"Image not found: {image_filename}, using placeholder"
-                            )
-                        )
+                        self.stdout.write(self.style.WARNING(f"Image not found: {image_filename}, using placeholder"))
                         img = Image.new("RGB", (800, 600), color=(214, 40, 40))
                         img_io = BytesIO()
                         img.save(img_io, format="JPEG")
@@ -271,18 +265,14 @@ class Command(BaseCommand):
                         media = CampaignMedia(
                             campaign=campaign,
                             media_type="image",
-                            file=File(
-                                img_io, name=f"campaign_{campaign.id}_image_{order}.jpg"
-                            ),
+                            file=File(img_io, name=f"campaign_{campaign.id}_image_{order}.jpg"),
                             order=order,
                         )
                         media.save()
 
                 action = "Created" if created else "Updated"
                 self.stdout.write(
-                    self.style.SUCCESS(
-                        f"{action} campaign: {campaign.title} with {len(selected_images)} images"
-                    )
+                    self.style.SUCCESS(f"{action} campaign: {campaign.title} with {len(selected_images)} images")
                 )
 
         # Sample news data with translations for all languages
@@ -435,9 +425,7 @@ class Command(BaseCommand):
                 )
 
                 # Select images (use all provided or random sample)
-                selected_images = image_list[
-                    : min(len(image_list), 4)
-                ]  # Max 4 images for news
+                selected_images = image_list[: min(len(image_list), 4)]  # Max 4 images for news
 
                 # Create NewsMedia entries for each image
                 for idx, image_filename in enumerate(selected_images):
@@ -457,11 +445,7 @@ class Command(BaseCommand):
                             news_media.save()
                     else:
                         # Fallback: create a simple colored image if file doesn't exist
-                        self.stdout.write(
-                            self.style.WARNING(
-                                f"Image not found: {image_filename}, using placeholder"
-                            )
-                        )
+                        self.stdout.write(self.style.WARNING(f"Image not found: {image_filename}, using placeholder"))
                         img = Image.new("RGB", (800, 600), color=(214, 40, 40))
                         img_io = BytesIO()
                         img.save(img_io, format="JPEG")
@@ -476,11 +460,7 @@ class Command(BaseCommand):
                         news_media.save()
 
             action = "Created" if created else "Updated"
-            images_info = (
-                f" with {len(selected_images)} images" if selected_images else ""
-            )
-            self.stdout.write(
-                self.style.SUCCESS(f"{action} news: {title_en}{images_info}")
-            )
+            images_info = f" with {len(selected_images)} images" if selected_images else ""
+            self.stdout.write(self.style.SUCCESS(f"{action} news: {title_en}{images_info}"))
 
         self.stdout.write(self.style.SUCCESS("Successfully seeded database!"))

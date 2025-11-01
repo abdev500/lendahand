@@ -11,11 +11,18 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from .models import Campaign, Donation, News, User
-from .serializers import (CampaignCreateSerializer, CampaignSerializer,
-                          DonationCreateSerializer, DonationSerializer,
-                          LoginSerializer, NewsCreateSerializer,
-                          NewsSerializer, PasswordChangeSerializer,
-                          UserRegistrationSerializer, UserSerializer)
+from .serializers import (
+    CampaignCreateSerializer,
+    CampaignSerializer,
+    DonationCreateSerializer,
+    DonationSerializer,
+    LoginSerializer,
+    NewsCreateSerializer,
+    NewsSerializer,
+    PasswordChangeSerializer,
+    UserRegistrationSerializer,
+    UserSerializer,
+)
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -37,13 +44,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"])
     def change_password(self, request):
-        serializer = PasswordChangeSerializer(
-            data=request.data, context={"user": request.user}
-        )
+        serializer = PasswordChangeSerializer(data=request.data, context={"user": request.user})
         if serializer.is_valid():
-            if not request.user.check_password(
-                serializer.validated_data["old_password"]
-            ):
+            if not request.user.check_password(serializer.validated_data["old_password"]):
                 return Response(
                     {"old_password": ["Wrong password."]},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -112,16 +115,12 @@ class CampaignViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(status="approved")
         elif not (self.request.user.is_moderator or self.request.user.is_staff):
             # Regular users see approved + their own campaigns
-            queryset = queryset.filter(
-                Q(status="approved") | Q(created_by=self.request.user)
-            )
+            queryset = queryset.filter(Q(status="approved") | Q(created_by=self.request.user))
 
         if status_filter:
             queryset = queryset.filter(status=status_filter)
 
-        return queryset.select_related("created_by").prefetch_related(
-            "media", "donations"
-        )
+        return queryset.select_related("created_by").prefetch_related("media", "donations")
 
     def perform_create(self, serializer):
         # Don't pass created_by and status here - let the serializer handle it
@@ -146,9 +145,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
     def suspend(self, request, pk=None):
         campaign = self.get_object()
         if campaign.created_by != request.user:
-            return Response(
-                {"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
         campaign.status = "suspended"
         campaign.save()
         return Response({"status": "campaign suspended"})
@@ -157,9 +154,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
     def cancel(self, request, pk=None):
         campaign = self.get_object()
         if campaign.created_by != request.user:
-            return Response(
-                {"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
         campaign.status = "cancelled"
         campaign.save()
         return Response({"status": "campaign cancelled"})
@@ -270,9 +265,7 @@ class DonationViewSet(viewsets.ModelViewSet):
         try:
             campaign = Campaign.objects.get(id=campaign_id, status="approved")
         except Campaign.DoesNotExist:
-            return Response(
-                {"error": "Campaign not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Campaign not found"}, status=status.HTTP_404_NOT_FOUND)
 
         # Create Stripe Checkout session
         try:
@@ -294,17 +287,13 @@ class DonationViewSet(viewsets.ModelViewSet):
                 success_url=request.build_absolute_uri(
                     f"/campaign/{campaign_id}?success=true&session_id={{CHECKOUT_SESSION_ID}}"
                 ),
-                cancel_url=request.build_absolute_uri(
-                    f"/campaign/{campaign_id}?canceled=true"
-                ),
+                cancel_url=request.build_absolute_uri(f"/campaign/{campaign_id}?canceled=true"),
                 metadata={
                     "campaign_id": campaign_id,
                 },
             )
 
-            return Response(
-                {"session_id": checkout_session.id, "url": checkout_session.url}
-            )
+            return Response({"session_id": checkout_session.id, "url": checkout_session.url})
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -321,9 +310,7 @@ class DonationViewSet(viewsets.ModelViewSet):
         """Confirm payment after Stripe webhook or manual confirmation."""
         session_id = request.data.get("session_id")
         if not session_id:
-            return Response(
-                {"error": "session_id required"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "session_id required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             session = stripe.checkout.Session.retrieve(session_id)
@@ -349,9 +336,7 @@ class DonationViewSet(viewsets.ModelViewSet):
                 campaign.current_amount += amount
                 campaign.save()
 
-                return Response(
-                    {"status": "success", "donation": DonationSerializer(donation).data}
-                )
+                return Response({"status": "success", "donation": DonationSerializer(donation).data})
             else:
                 return Response(
                     {"error": "Payment not completed"},

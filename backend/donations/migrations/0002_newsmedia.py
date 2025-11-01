@@ -25,9 +25,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "media_type",
-                    models.CharField(
-                        choices=[("image", "Image"), ("video", "Video")], max_length=10
-                    ),
+                    models.CharField(choices=[("image", "Image"), ("video", "Video")], max_length=10),
                 ),
                 ("file", models.FileField(upload_to="news/")),
                 ("order", models.IntegerField(default=0)),

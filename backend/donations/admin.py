@@ -1,8 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import (Campaign, CampaignMedia, Donation, ModerationHistory,
-                     News, NewsMedia, User)
+from .models import Campaign, CampaignMedia, Donation, ModerationHistory, News, NewsMedia, User
 
 
 @admin.register(User)
@@ -16,9 +15,7 @@ class UserAdmin(BaseUserAdmin):
         "is_active",
     ]
     list_filter = ["is_moderator", "is_staff", "is_active"]
-    fieldsets = BaseUserAdmin.fieldsets + (
-        ("Additional Info", {"fields": ("phone", "address", "is_moderator")}),
-    )
+    fieldsets = BaseUserAdmin.fieldsets + (("Additional Info", {"fields": ("phone", "address", "is_moderator")}),)
 
 
 class CampaignMediaInline(admin.TabularInline):
