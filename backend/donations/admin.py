@@ -1,12 +1,27 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import Campaign, CampaignMedia, Donation, ModerationHistory, News, User
+from .models import (
+    Campaign,
+    CampaignMedia,
+    Donation,
+    ModerationHistory,
+    News,
+    NewsMedia,
+    User,
+)
 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ["email", "username", "phone", "is_moderator", "is_staff", "is_active"]
+    list_display = [
+        "email",
+        "username",
+        "phone",
+        "is_moderator",
+        "is_staff",
+        "is_active",
+    ]
     list_filter = ["is_moderator", "is_staff", "is_active"]
     fieldsets = BaseUserAdmin.fieldsets + (("Additional Info", {"fields": ("phone", "address", "is_moderator")}),)
 
@@ -18,7 +33,14 @@ class CampaignMediaInline(admin.TabularInline):
 
 @admin.register(Campaign)
 class CampaignAdmin(admin.ModelAdmin):
-    list_display = ["title", "created_by", "status", "target_amount", "current_amount", "created_at"]
+    list_display = [
+        "title",
+        "created_by",
+        "status",
+        "target_amount",
+        "current_amount",
+        "created_at",
+    ]
     list_filter = ["status", "created_at"]
     search_fields = ["title", "description"]
     readonly_fields = ["current_amount", "created_at", "updated_at"]
@@ -41,7 +63,13 @@ class ModerationHistoryAdmin(admin.ModelAdmin):
     readonly_fields = ["created_at"]
 
 
+class NewsMediaInline(admin.TabularInline):
+    model = NewsMedia
+    extra = 1
+
+
 @admin.register(News)
 class NewsAdmin(admin.ModelAdmin):
     list_display = ["title", "published", "created_at"]
     list_filter = ["published", "created_at"]
+    inlines = [NewsMediaInline]

@@ -2,14 +2,22 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import Campaign, CampaignMedia, Donation, News, User
+from .models import Campaign, CampaignMedia, Donation, News, NewsMedia, User
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "email", "username", "phone", "address", "is_moderator"]
-        read_only_fields = ["id", "is_moderator"]
+        fields = [
+            "id",
+            "email",
+            "username",
+            "phone",
+            "address",
+            "is_moderator",
+            "is_staff",
+        ]
+        read_only_fields = ["id", "is_moderator", "is_staff"]
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -88,7 +96,13 @@ class CampaignSerializer(serializers.ModelSerializer):
             "progress_percentage",
             "moderation_notes",
         ]
-        read_only_fields = ["id", "current_amount", "created_at", "updated_at", "created_by"]
+        read_only_fields = [
+            "id",
+            "current_amount",
+            "created_at",
+            "updated_at",
+            "created_by",
+        ]
 
 
 class CampaignCreateSerializer(serializers.ModelSerializer):
@@ -96,11 +110,22 @@ class CampaignCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Campaign
-        fields = ["title", "short_description", "description", "target_amount", "status", "media_files"]
+        fields = [
+            "title",
+            "short_description",
+            "description",
+            "target_amount",
+            "status",
+            "media_files",
+        ]
 
     def create(self, validated_data):
         media_files = validated_data.pop("media_files", [])
-        campaign = Campaign.objects.create(**validated_data, created_by=self.context["request"].user)
+        # Get created_by from context (the request user)
+        # Get status from validated_data if provided, otherwise default to "pending"
+        created_by = self.context["request"].user
+        status = validated_data.pop("status", "pending")
+        campaign = Campaign.objects.create(**validated_data, created_by=created_by, status=status)
 
         for idx, media_file in enumerate(media_files[:6]):  # Limit to 6 files
             media_type = (
@@ -132,7 +157,10 @@ class CampaignCreateSerializer(serializers.ModelSerializer):
                     else "image"
                 )
                 CampaignMedia.objects.create(
-                    campaign=instance, media_type=media_type, file=media_file, order=existing_count + idx
+                    campaign=instance,
+                    media_type=media_type,
+                    file=media_file,
+                    order=existing_count + idx,
                 )
 
         return instance
@@ -163,8 +191,77 @@ class DonationCreateSerializer(serializers.ModelSerializer):
         return value
 
 
+class NewsMediaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NewsMedia
+        fields = ["id", "media_type", "file", "order"]
+        read_only_fields = ["id"]
+
+
 class NewsSerializer(serializers.ModelSerializer):
+    media = NewsMediaSerializer(many=True, read_only=True)
+
     class Meta:
         model = News
-        fields = ["id", "title", "content", "image", "published", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "title",
+            "content",
+            "image",
+            "media",
+            "published",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class NewsCreateSerializer(serializers.ModelSerializer):
+    media_files = serializers.ListField(child=serializers.FileField(), write_only=True, required=False)
+
+    class Meta:
+        model = News
+        fields = ["title", "content", "published", "media_files"]
+
+    def create(self, validated_data):
+        media_files = validated_data.pop("media_files", [])
+        news = News.objects.create(**validated_data)
+
+        # Add media files
+        for idx, media_file in enumerate(media_files[:6]):  # Limit to 6 files
+            media_type = (
+                "video"
+                if hasattr(media_file, "content_type") and media_file.content_type.startswith("video/")
+                else "image"
+            )
+            NewsMedia.objects.create(news=news, media_type=media_type, file=media_file, order=idx)
+
+        return news
+
+    def update(self, instance, validated_data):
+        media_files = validated_data.pop("media_files", None)
+
+        # Update news fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # If new media files provided, add them
+        if media_files:
+            existing_count = instance.media.count()
+            for idx, media_file in enumerate(media_files[:6]):  # Limit to 6 files total
+                if existing_count + idx >= 6:
+                    break
+                media_type = (
+                    "video"
+                    if hasattr(media_file, "content_type") and media_file.content_type.startswith("video/")
+                    else "image"
+                )
+                NewsMedia.objects.create(
+                    news=instance,
+                    media_type=media_type,
+                    file=media_file,
+                    order=existing_count + idx,
+                )
+
+        return instance

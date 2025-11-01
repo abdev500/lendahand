@@ -54,6 +54,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "donations.middleware.DisableCSRFForAPI",  # Exempt API from CSRF
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "donations.middleware.TokenAuthenticationMiddleware",  # Token auth for template views
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -159,6 +160,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "EXCEPTION_HANDLER": "donations.exceptions.custom_exception_handler",
 }
 
 # CORS
