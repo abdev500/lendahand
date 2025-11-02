@@ -56,15 +56,12 @@ storage:
       consolePort: 9001
 
     ingress:
-      enabled: true
+      enabled: false  # Console ingress disabled - console accessible via port-forward
       apiEnabled: true  # Enable API ingress for media file serving
       className: "nginx"
       annotations: {}
       hosts:
         - host: storage-test.lendahand.me
-          paths:
-            - path: /
-              pathType: Prefix
           apiPaths:
             - path: /
               pathType: Prefix
