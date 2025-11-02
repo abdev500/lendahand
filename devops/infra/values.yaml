@@ -38,18 +38,3 @@ ingress-nginx:
 #        nginx.ingress.kubernetes.io/enable-cors: "true"
       ports:
         https: 443
-
-
-cert-manager:
-  enabled: true
-  installCRDs: true
-  global:
-    leaderElection:
-      namespace: cert-manager
-  namespace: cert-manager
-  issuer:
-    name: letsencrypt-issuer
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: admin@lend-a-hand.me
-    privateKeySecretName: letsencrypt-account-key
-    ingressClass: nginx

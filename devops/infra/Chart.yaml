@@ -7,7 +7,7 @@ version: 0.1.0
 appVersion: "1.16.0"
 
 dependencies:
-  - name: postgresql                 # the subchart’s name (as published)
+  - name: postgresql                 # the subchart's name (as published)
     version: 15.5.25                 # pin a specific version
     repository: https://charts.bitnami.com/bitnami
     condition: postgresql.enabled    # (optional) allow toggling via values
@@ -15,7 +15,3 @@ dependencies:
     version: 4.13.2                      # chart version (tracks controller v1.13.x)
     repository: https://kubernetes.github.io/ingress-nginx
     condition: ingress-nginx.enabled
-  - name: cert-manager
-    version: v1.15.1    # match a released version
-    repository: https://charts.jetstack.io
-    condition: cert-manager.enabled
