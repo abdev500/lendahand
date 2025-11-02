@@ -72,8 +72,8 @@ jobs:
             --create-namespace \
             --set backend.image.tag=${GITHUB_SHA} \
             --set frontend.image.tag=${GITHUB_SHA} \
-            --set backend.ingress.hosts[0].host="${{ env.URL_API_INGRESS }}" \
-            --set frontend.ingress.hosts[0].host="${{ env.URL_REACT_INGRESS }}" \
+            --set "backend.ingress.hosts[0].host=${{ env.URL_API_INGRESS }}" \
+            --set "frontend.ingress.hosts[0].host=${{ env.URL_REACT_INGRESS }}" \
             --set backend.env.STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
             --set backend.env.STRIPE_PUBLISHABLE_KEY="${{ secrets.STRIPE_PUBLISHABLE_KEY }}" \
             --set backend.env.STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}"
