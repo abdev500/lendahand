@@ -8,12 +8,12 @@ permissions:
   contents: read
 
 jobs:
-  call:
+  infra:
     uses: ./.github/workflows/infra.yml
     with:
       environment: development
     secrets: inherit
-  call:
+  cd:
     uses: ./.github/workflows/cd.yml
     with:
       environment: development
