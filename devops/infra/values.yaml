@@ -47,17 +47,10 @@ storage:
       className: "nginx"
       annotations: {}
       hosts:
-        # Console ingress host (for MinIO console UI)
-        - host: storage-console-test.lendahand.me
-          paths:
-            - path: /
-              pathType: Prefix
-        # API ingress host (for media file serving)
-        - host: storage-test.lendahand.me
-          apiPaths:
-            - path: /
-              pathType: Prefix
-      tls: []
+        - host: storage-console-test.lend-a-hand.me
+        - host: storage-test.lend-a-hand.me
+      tls: true
+      tlsClusterIssuer: "letsencrypt-prod"  # Optional: override default ClusterIssuer
 
     auth:
       rootUser: "minioadmin"

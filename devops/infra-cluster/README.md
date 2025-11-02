@@ -5,6 +5,7 @@ Cluster-scoped infrastructure components that should be installed **once per clu
 ## Components
 
 - **ingress-nginx**: Kubernetes Ingress Controller (cluster-scoped resource)
+- **cert-manager**: Kubernetes certificate management (Let's Encrypt)
 
 ## Installation
 
@@ -60,13 +61,60 @@ helm dependency update
 
 ## Configuration
 
-Edit `values.yaml` to customize ingress-nginx settings:
+Edit `values.yaml` to customize:
 
+### ingress-nginx settings:
 - LoadBalancer IP
 - Service annotations
 - Controller replicas
 - Resource limits
 - etc.
+
+### cert-manager settings:
+- Email address for Let's Encrypt notifications
+- Enable/disable production or staging ClusterIssuers
+- Replica counts
+- Resource limits
+
+### Let's Encrypt ClusterIssuers
+
+The chart automatically creates ClusterIssuer resources for Let's Encrypt:
+- **letsencrypt-prod**: Production issuer (uses real Let's Encrypt)
+- **letsencrypt-staging**: Staging issuer (uses Let's Encrypt staging for testing)
+
+To use these issuers in your Ingress resources, add the annotation:
+
+```yaml
+annotations:
+  cert-manager.io/cluster-issuer: letsencrypt-prod  # or letsencrypt-staging
+```
+
+Example Ingress with TLS:
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-app-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - my-app.example.com
+    secretName: my-app-tls
+  rules:
+  - host: my-app.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: my-app
+            port:
+              number: 80
+```
 
 ## Uninstallation
 
