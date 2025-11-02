@@ -5,6 +5,7 @@
 {{- fail "Only nginx ingress controller is supported" }}
 {{- end }}
 {{- range .Values.storage.minio.ingress.hosts }}
+{{- if .paths }}
 {{- $host := .host }}
 ---
 apiVersion: networking.k8s.io/v1
@@ -15,6 +16,8 @@ metadata:
     {{- include "infra.labels" $ | nindent 4 }}
     app.kubernetes.io/component: storage
   annotations:
+    # MinIO console specific annotations
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
     {{- with $.Values.storage.minio.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -36,14 +39,15 @@ spec:
     - host: {{ $host | quote }}
       http:
         paths:
-        # Route /minio/* paths to console (more specific path, matches before API ingress)
-        # Console ingress uses fixed /minio path, not from values.yaml paths
-        - path: /minio
-          pathType: Prefix
+        {{- range .paths }}
+        - path: {{ .path }}
+          pathType: {{ .pathType }}
           backend:
             service:
               name: {{ $fullName }}-minio
               port:
                 number: {{ $consolePort }}
+        {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}

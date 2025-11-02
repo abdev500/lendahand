@@ -56,11 +56,17 @@ storage:
       consolePort: 9001
 
     ingress:
-      enabled: false  # Console ingress disabled - console accessible via port-forward
+      enabled: true  # Enable console ingress
       apiEnabled: true  # Enable API ingress for media file serving
       className: "nginx"
       annotations: {}
       hosts:
+        # Console ingress host (for MinIO console UI)
+        - host: storage-console-test.lendahand.me
+          paths:
+            - path: /
+              pathType: Prefix
+        # API ingress host (for media file serving)
         - host: storage-test.lendahand.me
           apiPaths:
             - path: /

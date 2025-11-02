@@ -1,8 +1,9 @@
 """
 Custom storage backend for MinIO S3-compatible storage.
-Ensures bucket name is included in URLs when using custom domain.
+Generates URLs that point to Django backend for serving files.
 """
 from django.conf import settings
+from django.urls import reverse
 from storages.backends.s3boto3 import S3Boto3Storage
 
 
@@ -10,52 +11,25 @@ class MinIOStorage(S3Boto3Storage):
     """
     Custom S3 storage backend for MinIO.
 
-    This backend ensures that when using a custom domain (AWS_S3_CUSTOM_DOMAIN),
-    the bucket name is included in the URL path for path-based bucket addressing.
+    This backend generates URLs that point to Django backend endpoints
+    instead of directly to MinIO, allowing Django to proxy/serve files.
 
-    For MinIO with path-based bucket addressing:
-    - URL format: http://custom-domain/bucket-name/path/to/file.jpg
-    - Without this fix: http://custom-domain/path/to/file.jpg (bucket missing)
+    URLs format: /api/media/<file_path>
+    Django will proxy the request to MinIO and serve the file.
     """
 
     def url(self, name):
         """
-        Override URL generation to include bucket name when using custom domain.
+        Generate URL pointing to Django backend endpoint.
 
-        When AWS_S3_CUSTOM_DOMAIN is set, django-storages generates URLs like:
-        http://custom-domain/path/to/file.jpg
+        Instead of direct MinIO URLs, generate Django URLs like:
+        /api/media/campaigns/image.jpg
 
-        But MinIO with path-based bucket addressing needs:
-        http://custom-domain/bucket-name/path/to/file.jpg
+        Django will proxy this to MinIO and serve the file.
         """
-        # Get the base URL from parent class
-        url = super().url(name)
-
-        # If using custom domain, ensure bucket name is in the path
-        custom_domain = getattr(settings, 'AWS_S3_CUSTOM_DOMAIN', None)
-        bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
-        use_ssl = getattr(settings, 'AWS_S3_USE_SSL', False)
-
-        if custom_domain and bucket_name:
-            # Parse the URL
-            from urllib.parse import urlparse, urlunparse
-            parsed = urlparse(url)
-
-            # Only process if the host matches our custom domain
-            if parsed.netloc == custom_domain or parsed.netloc == custom_domain.split(':')[0]:
-                # Ensure protocol matches AWS_S3_USE_SSL setting
-                # Force HTTP if use_ssl is False, HTTPS if True
-                scheme = "https" if use_ssl else "http"
-                parsed = parsed._replace(scheme=scheme)
-
-                # Check if bucket name is already in the path
-                path_parts = parsed.path.lstrip('/').split('/', 1)
-                if len(path_parts) > 0 and path_parts[0] != bucket_name:
-                    # Bucket name is missing, add it to the path
-                    # For path-based addressing: /bucket-name/path/to/file
-                    new_path = f"/{bucket_name}{parsed.path}" if parsed.path.startswith('/') else f"/{bucket_name}/{parsed.path}"
-                    parsed = parsed._replace(path=new_path)
-
-                url = urlunparse(parsed)
-
-        return url
+        # Generate Django media URL instead of direct MinIO URL
+        # Use /api/media/ prefix to route through Django
+        # Remove any leading slashes from name to avoid double slashes
+        clean_name = name.lstrip('/')
+        media_url = f"/api/media/{clean_name}"
+        return media_url

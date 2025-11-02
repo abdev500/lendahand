@@ -511,3 +511,72 @@ def health_check(request):
         # Return 200 even if DB check fails - allows for graceful degradation
         # Adjust based on your requirements (you might want 503 if DB is critical)
         return Response({"status": "healthy", "database": "unknown"}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def serve_media(request, file_path):
+    """
+    Serve media files from MinIO storage through Django backend.
+
+    This endpoint proxies requests to MinIO and serves the file,
+    avoiding the need for public bucket access.
+
+    URL format: /api/media/<file_path>
+    Example: /api/media/campaigns/image.jpg
+    """
+    from django.conf import settings
+    from django.http import StreamingHttpResponse, Http404
+    import boto3
+    from botocore.exceptions import ClientError
+
+    # Only serve media if S3 storage is enabled
+    if not settings.USE_S3_STORAGE:
+        raise Http404("Media storage not configured")
+
+    try:
+        # Connect to MinIO
+        s3_client = boto3.client(
+            's3',
+            endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+        )
+
+        bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+
+        # Get object from MinIO
+        try:
+            obj = s3_client.get_object(Bucket=bucket_name, Key=file_path)
+        except ClientError as e:
+            error_code = e.response.get('Error', {}).get('Code', '')
+            if error_code == 'NoSuchKey':
+                raise Http404("File not found")
+            logger.error(f"Error accessing file {file_path}: {e}")
+            raise Http404("Error accessing file")
+
+        # Determine content type
+        content_type = obj.get('ContentType', 'application/octet-stream')
+
+        # Stream the file content
+        def file_iterator():
+            for chunk in obj['Body'].iter_chunks(chunk_size=8192):
+                yield chunk
+
+        # Create streaming response
+        response = StreamingHttpResponse(file_iterator(), content_type=content_type)
+
+        # Set cache headers
+        response['Cache-Control'] = 'public, max-age=86400'  # Cache for 1 day
+
+        # Set content length if available
+        if 'ContentLength' in obj:
+            response['Content-Length'] = str(obj['ContentLength'])
+
+        return response
+
+    except Http404:
+        raise
+    except Exception as e:
+        logger.error(f"Error serving media file {file_path}: {e}")
+        raise Http404("Error serving file")

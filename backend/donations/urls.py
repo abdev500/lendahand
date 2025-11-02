@@ -10,6 +10,7 @@ from .views import (
     login_view,
     logout_view,
     register,
+    serve_media,
     stripe_webhook,
 )
 
@@ -26,4 +27,6 @@ urlpatterns = [
     path("auth/login/", login_view, name="login"),
     path("auth/logout/", logout_view, name="logout"),
     path("stripe/webhook/", stripe_webhook, name="stripe-webhook"),
+    # Media serving endpoint - serves files from MinIO through Django
+    path("media/<path:file_path>", serve_media, name="serve-media"),
 ]
