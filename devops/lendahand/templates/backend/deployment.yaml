@@ -66,6 +66,8 @@ spec:
         {{- if .Values.storage.minio.enabled }}
         - name: AWS_S3_ENDPOINT_URL
           value: "http://infra-minio:9000"
+        - name: AWS_S3_CUSTOM_DOMAIN
+          value: "storage-test.lendahand.me"
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:

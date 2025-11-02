@@ -57,11 +57,15 @@ storage:
 
     ingress:
       enabled: true
+      apiEnabled: true  # Enable API ingress for media file serving
       className: "nginx"
       annotations: {}
       hosts:
         - host: storage-test.lendahand.me
           paths:
+            - path: /
+              pathType: Prefix
+          apiPaths:
             - path: /
               pathType: Prefix
       tls: []

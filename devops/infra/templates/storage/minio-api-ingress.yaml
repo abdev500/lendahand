@@ -1,6 +1,6 @@
-{{- if and .Values.storage.minio.enabled .Values.storage.minio.ingress.enabled }}
+{{- if and .Values.storage.minio.enabled .Values.storage.minio.ingress.apiEnabled }}
 {{- $fullName := include "infra.fullname" . }}
-{{- $consolePort := .Values.storage.minio.service.consolePort | default 9001 }}
+{{- $apiPort := .Values.storage.minio.service.port | default 9000 }}
 {{- if and .Values.storage.minio.ingress.className (not (hasPrefix "nginx" .Values.storage.minio.ingress.className)) }}
 {{- fail "Only nginx ingress controller is supported" }}
 {{- end }}
@@ -10,14 +10,16 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ $fullName }}-minio-console
+  name: {{ $fullName }}-minio-api
   labels:
     {{- include "infra.labels" $ | nindent 4 }}
     app.kubernetes.io/component: storage
   annotations:
-    # Only route console paths
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/use-regex: "true"
+    # Enable CORS for media files
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, HEAD, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"
     {{- with $.Values.storage.minio.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -36,18 +38,17 @@ spec:
     {{- end }}
   {{- end }}
   rules:
-    {{- range .paths }}
+    {{- range .apiPaths }}
     - host: {{ $host | quote }}
       http:
         paths:
-        # Route /minio/* paths to console
-        - path: /minio(/|$)(.*)
-          pathType: ImplementationSpecific
+        - path: {{ .path }}
+          pathType: {{ .pathType }}
           backend:
             service:
               name: {{ $fullName }}-minio
               port:
-                number: {{ $consolePort }}
+                number: {{ $apiPort }}
     {{- end }}
 {{- end }}
 {{- end }}
