@@ -11,9 +11,8 @@ on:
 
 env:
   PROJECT_ID: 'test-donate-472114'
-  GAR_LOCATION: 'us-central1'
+  GAR_LOCATION: 'us-central1-a'
   GKE_CLUSTER: 'lendahand-testenv'
-  GKE_ZONE: 'us-central1-c'
 
 jobs:
   setup-build-publish-deploy:
