@@ -1,7 +1,7 @@
-name: Deploy Dev
+name: Deploy Test
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ "test" ]
 
 permissions:
   id-token: write
@@ -11,11 +11,11 @@ jobs:
   infra:
     uses: ./.github/workflows/infra.yml
     with:
-      environment: development
+      environment: test
     secrets: inherit
   cd:
     uses: ./.github/workflows/cd.yml
     with:
-      environment: development
+      environment: test
     secrets: inherit
 
