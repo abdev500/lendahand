@@ -89,7 +89,7 @@ frontend:
     tls: []
 
   env:
-    REACT_APP_API_URL: "http://api-test.lendahand.me"
+    REACT_APP_API_URL: "http://api-test.lendahand.me/api"
 
   envFrom: []
 
