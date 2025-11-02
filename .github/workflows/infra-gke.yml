@@ -44,5 +44,5 @@ jobs:
 
       - name: 'Deploy to GKE'
         run: |-
-          helm upgrade --install infra devops/infra
+          helm upgrade --install infra devops/infra 
           kubectl get pods -A

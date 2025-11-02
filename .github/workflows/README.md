@@ -111,6 +111,13 @@ Configure these secrets in your GitHub repository settings:
 - `GKE_CLUSTER_NAME_DEV`: GKE cluster name (e.g., `lendahand-dev`)
 - `GKE_LOCATION_DEV`: GKE cluster location (e.g., `us-central1-a`)
 
+**Stripe Keys (Used by cd.yml):**
+- `STRIPE_SECRET_KEY`: Stripe secret API key
+- `STRIPE_PUBLISHABLE_KEY`: Stripe publishable API key
+- `STRIPE_WEBHOOK_SECRET`: Stripe webhook signing secret
+
+These secrets are passed to the Helm deployment via `--set` flags in the CD workflow.
+
 ### For Build
 
 - `REACT_APP_API_URL`: Frontend API URL (optional, has defaults)

@@ -15,9 +15,6 @@ metadata:
     {{- include "infra.labels" $ | nindent 4 }}
     app.kubernetes.io/component: storage
   annotations:
-    # Only route console paths
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/use-regex: "true"
     {{- with $.Values.storage.minio.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -36,18 +33,17 @@ spec:
     {{- end }}
   {{- end }}
   rules:
-    {{- range .paths }}
     - host: {{ $host | quote }}
       http:
         paths:
-        # Route /minio/* paths to console
-        - path: /minio(/|$)(.*)
-          pathType: ImplementationSpecific
+        # Route /minio/* paths to console (more specific path, matches before API ingress)
+        # Console ingress uses fixed /minio path, not from values.yaml paths
+        - path: /minio
+          pathType: Prefix
           backend:
             service:
               name: {{ $fullName }}-minio
               port:
                 number: {{ $consolePort }}
-    {{- end }}
 {{- end }}
 {{- end }}
