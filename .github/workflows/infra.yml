@@ -21,6 +21,20 @@ jobs:
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332' # actions/checkout@v4
+      - id: load
+        name: Load config
+        run: |
+          echo "Reading config/config.${{ inputs.environment }}.yml"
+          python - <<'PY'
+          import yaml, json
+          with open(f"config/config.${{inputs.environment}}.yml") as f:
+              data = yaml.safe_load(f)
+          # flatten the k8 section into env vars
+          for k, v in data["k8"].items():
+              print(f"{k}={v}")
+          PY | while IFS='=' read -r key value; do
+            echo "K8_${key}=${value}" >> "$GITHUB_ENV"
+          done
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v3'
@@ -29,11 +43,11 @@ jobs:
       - name: Get GKE credentials (no plugin needed)
         uses: google-github-actions/get-gke-credentials@v3
         with:
-          project_id: ${{ env.k8.PROJECT_ID }}
-          cluster_name: ${{ env.k8.GKE_CLUSTER }}
-          location: ${{ env.k8.GKE_ZONE }}
+          project_id: ${{ env.K8_PROJECT_ID }}
+          cluster_name: ${{ env.K8_GKE_CLUSTER }}
+          location: ${{ env.K8_GKE_ZONE }}
 
       - name: 'Deploy to GKE'
         run: |-
-          helm upgrade --install infra devops/infra --namespace ${{ env.k8.NAMESPACE }}   --create-namespace
-          kubectl get pods -A --namespace ${{ env.k8.NAMESPACE }} 
+          helm upgrade --install infra devops/infra --namespace ${{ env.K8_NAMESPACE }}   --create-namespace
+          kubectl get pods -A --namespace ${{ env.K8_NAMESPACE }} 
