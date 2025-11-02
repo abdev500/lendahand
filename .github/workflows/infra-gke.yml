@@ -12,7 +12,7 @@ on:
 env:
   PROJECT_ID: 'test-donate-472114'
   GAR_LOCATION: 'us-central1'
-  GKE_CLUSTER: 'lendahand'
+  GKE_CLUSTER: 'lendahand-testenv'
   GKE_ZONE: 'us-central1-c'
 
 jobs:
@@ -45,6 +45,18 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GAR_LOCATION }}  
+
+      - name: 'Build and push Docker container storage minio'
+        run: |-
+          DOCKER_TAG="${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/storageminio:${GITHUB_SHA}"
+          docker build \
+            --tag "${DOCKER_TAG}" \
+            --build-arg GITHUB_SHA="${GITHUB_SHA}" \
+            --build-arg GITHUB_REF="${GITHUB_REF}" \
+            storage
+          docker push "${DOCKER_TAG}"
+          echo "Pushed:" "${DOCKER_TAG}"
+
 
       - name: 'Deploy to GKE'
         run: |-
