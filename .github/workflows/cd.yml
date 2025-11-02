@@ -73,6 +73,8 @@ jobs:
             --set backend.image.tag=${GITHUB_SHA} \
             --set frontend.image.tag=${GITHUB_SHA} \
             --set "backend.ingress.hosts[0].host=${{ env.URL_API_INGRESS }}" \
+            --set "backend.env.FRONTEND_URL=${{ env.URL_FRONTEND }}" \
+            --set "frontend.env.REACT_APP_API_URL=${{ env.URL_API }}" \
             --set "frontend.ingress.hosts[0].host=${{ env.URL_REACT_INGRESS }}" \
             --set backend.env.STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
             --set backend.env.STRIPE_PUBLISHABLE_KEY="${{ secrets.STRIPE_PUBLISHABLE_KEY }}" \
