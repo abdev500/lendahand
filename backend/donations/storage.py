@@ -34,6 +34,7 @@ class MinIOStorage(S3Boto3Storage):
         # If using custom domain, ensure bucket name is in the path
         custom_domain = getattr(settings, 'AWS_S3_CUSTOM_DOMAIN', None)
         bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
+        use_ssl = getattr(settings, 'AWS_S3_USE_SSL', False)
 
         if custom_domain and bucket_name:
             # Parse the URL
@@ -42,6 +43,11 @@ class MinIOStorage(S3Boto3Storage):
 
             # Only process if the host matches our custom domain
             if parsed.netloc == custom_domain or parsed.netloc == custom_domain.split(':')[0]:
+                # Ensure protocol matches AWS_S3_USE_SSL setting
+                # Force HTTP if use_ssl is False, HTTPS if True
+                scheme = "https" if use_ssl else "http"
+                parsed = parsed._replace(scheme=scheme)
+
                 # Check if bucket name is already in the path
                 path_parts = parsed.path.lstrip('/').split('/', 1)
                 if len(path_parts) > 0 and path_parts[0] != bucket_name:
@@ -49,6 +55,7 @@ class MinIOStorage(S3Boto3Storage):
                     # For path-based addressing: /bucket-name/path/to/file
                     new_path = f"/{bucket_name}{parsed.path}" if parsed.path.startswith('/') else f"/{bucket_name}/{parsed.path}"
                     parsed = parsed._replace(path=new_path)
-                    url = urlunparse(parsed)
+
+                url = urlunparse(parsed)
 
         return url
