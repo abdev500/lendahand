@@ -164,8 +164,8 @@ if USE_S3_STORAGE:
         "CacheControl": "max-age=86400",  # Cache for 1 day
     }
 
-    # Use S3 for media files
-    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    # Use custom S3 storage backend for MinIO (ensures bucket name in URLs)
+    DEFAULT_FILE_STORAGE = "donations.storage.MinIOStorage"
 
     # Media URL configuration
     if AWS_S3_CUSTOM_DOMAIN:

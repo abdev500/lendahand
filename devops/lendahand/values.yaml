@@ -39,6 +39,7 @@ backend:
     STRIPE_SECRET_KEY: ""
     STRIPE_PUBLISHABLE_KEY: ""
     STRIPE_WEBHOOK_SECRET: ""
+    FRONTEND_URL: "http://test.lendahand.me"  # Frontend URL for Stripe redirects
     ALLOWED_HOSTS: "*"
     # MinIO/S3 Storage Configuration
     # MinIO is managed by the infra chart - service name: infra-minio
