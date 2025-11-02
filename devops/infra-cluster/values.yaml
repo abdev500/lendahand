@@ -14,3 +14,28 @@ ingress-nginx:
       #   nginx.ingress.kubernetes.io/enable-cors: "true"
       ports:
         https: 443
+
+# cert-manager for Let's Encrypt certificate management
+cert-manager:
+  enabled: true
+  installCRDs: true
+  # Global settings
+  global:
+    # Set priority class name for cert-manager pods
+    priorityClassName: ""
+  # cert-manager controller
+  replicaCount: 1
+  # cainjector settings
+  cainjector:
+    enabled: true
+    replicaCount: 1
+  # webhook settings
+  webhook:
+    enabled: true
+    replicaCount: 1
+  # ClusterIssuer configuration for Let's Encrypt
+  clusterIssuer:
+    enabled: true
+    email: "admin@lendahand.me"  # Change this to your email address
+    production: true   # Create production ClusterIssuer (letsencrypt-prod)
+    staging: true      # Create staging ClusterIssuer (letsencrypt-staging) for testing

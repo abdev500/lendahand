@@ -7,7 +7,10 @@
 {{- range .Values.frontend.ingress.hosts }}
 {{- $host := .host | default "" }}
 {{- $paths := .paths | default (list (dict "path" "/" "pathType" "Prefix")) }}
+{{- $tlsEnabled := $.Values.frontend.ingress.tls | default false }}
+{{- $clusterIssuer := $.Values.frontend.ingress.tlsClusterIssuer | default "letsencrypt-prod" }}
 {{- if $host }}
+{{- $secretName := printf "%s-tls" ($host | replace "." "-" | replace "_" "-" | lower) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -15,23 +18,22 @@ metadata:
   name: {{ $fullName }}-frontend
   labels:
     {{- include "lendahand.frontend.labels" $ | nindent 4 }}
-  {{- with $.Values.frontend.ingress.annotations }}
   annotations:
+    {{- with $.Values.frontend.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
+    {{- if $tlsEnabled }}
+    cert-manager.io/cluster-issuer: {{ $clusterIssuer | quote }}
+    {{- end }}
 spec:
   {{- if $.Values.frontend.ingress.className }}
   ingressClassName: {{ $.Values.frontend.ingress.className }}
   {{- end }}
-  {{- if $.Values.frontend.ingress.tls }}
+  {{- if $tlsEnabled }}
   tls:
-    {{- range $.Values.frontend.ingress.tls }}
     - hosts:
-        {{- range .hosts }}
-        - {{ . | quote }}
-        {{- end }}
-      secretName: {{ .secretName }}
-    {{- end }}
+        - {{ $host | quote }}
+      secretName: {{ $secretName | quote }}
   {{- end }}
   rules:
     {{- range $paths }}
