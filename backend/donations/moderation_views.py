@@ -57,13 +57,24 @@ def moderation_dashboard(request):
 @moderation_login_required
 def moderate_campaign(request, campaign_id, action):
     """Approve or reject a campaign."""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"moderate_campaign called: method={request.method}, campaign_id={campaign_id}, action={action}, user={request.user.email if request.user.is_authenticated else 'anonymous'}")
+
+    if request.method != "POST":
+        messages.error(request, "Invalid request method. Use POST.")
+        logger.warning(f"Invalid method: {request.method}")
+        return redirect("moderation:dashboard")
+
     campaign = get_object_or_404(Campaign, id=campaign_id)
+    logger.info(f"Campaign found: {campaign.title}, status={campaign.status}")
 
     if campaign.status != "pending":
         messages.error(request, "This campaign is not pending moderation.")
         return redirect("moderation:dashboard")
 
     notes = request.POST.get("notes", "")
+    logger.info(f"Processing {action} with notes: {notes[:50] if notes else 'None'}")
 
     if action == "approve":
         campaign.status = "approved"
@@ -77,6 +88,9 @@ def moderate_campaign(request, campaign_id, action):
         campaign.save()
         ModerationHistory.objects.create(campaign=campaign, moderator=request.user, action="reject", notes=notes)
         messages.success(request, f'Campaign "{campaign.title}" has been rejected.')
+    else:
+        messages.error(request, f"Invalid action: {action}")
+        return redirect("moderation:dashboard")
 
     return redirect("moderation:dashboard")
 

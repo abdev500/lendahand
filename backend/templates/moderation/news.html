@@ -148,7 +148,7 @@
                     {% for news in all_news %}
                         <div class="news-card">
                             <h3>{{ news.title }}</h3>
-                            <p><strong>Published:</strong> 
+                            <p><strong>Published:</strong>
                                 {% if news.published %}
                                     <span class="published-badge">Published</span>
                                 {% else %}
@@ -161,7 +161,6 @@
                                 <a href="/news/{{ news.id }}/edit" class="btn btn-edit" target="_blank">Edit News</a>
                                 <a href="/api/news/{{ news.id }}/" class="btn btn-view" target="_blank">View Details</a>
                                 <form method="post" action="{% url 'moderation:toggle_news' news.id %}" style="display: inline;">
-                                    {% csrf_token %}
                                     {% if news.published %}
                                         <button type="submit" class="btn btn-unpublish">Unpublish</button>
                                     {% else %}
@@ -179,4 +178,3 @@
     </div>
 </body>
 </html>
-

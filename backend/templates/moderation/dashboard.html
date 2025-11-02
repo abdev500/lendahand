@@ -58,6 +58,19 @@
         }
         .campaign-actions {
             margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .moderation-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .action-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
         .btn {
             padding: 10px 20px;
@@ -107,6 +120,29 @@
             color: #999;
             font-style: italic;
         }
+        .messages {
+            margin-bottom: 20px;
+        }
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .message-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .message-error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .message-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
     </style>
 </head>
 <body>
@@ -120,6 +156,16 @@
             <a href="/api/">API</a>
         </div>
 
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message message-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <div class="section">
             <h2>Pending Campaigns</h2>
             {% if pending_campaigns %}
@@ -131,22 +177,22 @@
                             <p><strong>Target:</strong> ${{ campaign.target_amount }}</p>
                             <p><strong>Description:</strong> {{ campaign.short_description|truncatewords:30 }}</p>
                             <div class="campaign-actions">
-                                <form method="post" action="{% url 'moderation:moderate' campaign.id 'approve' %}" style="display: inline;">
-                                    {% csrf_token %}
+                                <form method="post" action="{% url 'moderation:moderate' campaign.id 'approve' %}" class="moderation-form" onsubmit="console.log('Submitting approve form'); return true;">
                                     <div class="notes-form">
                                         <textarea name="notes" placeholder="Moderation notes (optional)"></textarea>
                                     </div>
                                     <button type="submit" class="btn btn-approve">Approve</button>
                                 </form>
-                                <form method="post" action="{% url 'moderation:moderate' campaign.id 'reject' %}" style="display: inline;">
-                                    {% csrf_token %}
+                                <form method="post" action="{% url 'moderation:moderate' campaign.id 'reject' %}" class="moderation-form" onsubmit="console.log('Submitting reject form'); return true;">
                                     <div class="notes-form">
                                         <textarea name="notes" placeholder="Rejection reason (optional)"></textarea>
                                     </div>
                                     <button type="submit" class="btn btn-reject">Reject</button>
                                 </form>
-                                <a href="/api/campaigns/{{ campaign.id }}/" class="btn btn-view" target="_blank">View Details</a>
-                                <a href="/campaigns/{{ campaign.id }}/edit" class="btn btn-edit" target="_blank">Edit Campaign</a>
+                                <div class="action-links">
+                                    <a href="/api/campaigns/{{ campaign.id }}/" class="btn btn-view" target="_blank">View Details</a>
+                                    <a href="/campaigns/{{ campaign.id }}/edit" class="btn btn-edit" target="_blank">Edit Campaign</a>
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
@@ -200,4 +246,3 @@
     </div>
 </body>
 </html>
-

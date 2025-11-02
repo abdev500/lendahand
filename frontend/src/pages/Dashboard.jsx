@@ -246,6 +246,45 @@ function Dashboard() {
     }
   }
 
+  const handleApproveCampaign = async (campaignId) => {
+    try {
+      await api.post(`/campaigns/${campaignId}/approve/`, {
+        moderation_notes: notes || ''
+      })
+      setSuccessMessage(t('moderation.approveSuccess', 'Campaign approved successfully!'))
+      setShowNotesForm(null)
+      setNotes('')
+      fetchPendingCampaigns()
+      setTimeout(() => setSuccessMessage(''), 5000)
+    } catch (error) {
+      console.error('Error approving campaign:', error)
+      const errorMsg = error.response?.data?.error || error.response?.data?.detail || t('moderation.approveError', 'Error approving campaign')
+      alert(errorMsg)
+    }
+  }
+
+  const handleRejectCampaign = async (campaignId) => {
+    if (!notes.trim()) {
+      alert(t('moderation.rejectReasonRequired', 'Rejection reason is required'))
+      return
+    }
+
+    try {
+      await api.post(`/campaigns/${campaignId}/reject/`, {
+        moderation_notes: notes
+      })
+      setSuccessMessage(t('moderation.rejectSuccess', 'Campaign rejected successfully!'))
+      setShowNotesForm(null)
+      setNotes('')
+      fetchPendingCampaigns()
+      setTimeout(() => setSuccessMessage(''), 5000)
+    } catch (error) {
+      console.error('Error rejecting campaign:', error)
+      const errorMsg = error.response?.data?.error || error.response?.data?.detail || t('moderation.rejectError', 'Error rejecting campaign')
+      alert(errorMsg)
+    }
+  }
+
   if (loading) {
     return <div className="container">{t('common.loading')}</div>
   }

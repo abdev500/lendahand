@@ -7,13 +7,17 @@ User = get_user_model()
 
 class DisableCSRFForAPI(MiddlewareMixin):
     """
-    Disable CSRF protection for API endpoints.
-    Since we're using TokenAuthentication, CSRF is not needed.
+    Disable CSRF protection for API endpoints and moderation views.
+    Since we're using TokenAuthentication, CSRF is not needed for API endpoints.
+    Moderation views use token authentication and are protected by moderation_login_required.
     """
 
     def process_request(self, request):
         # Exempt all API endpoints from CSRF
         if request.path.startswith("/api/"):
+            setattr(request, "_dont_enforce_csrf_checks", True)
+        # Exempt moderation endpoints from CSRF (users authenticated via token don't have sessions)
+        elif request.path.startswith("/moderation/"):
             setattr(request, "_dont_enforce_csrf_checks", True)
 
 
