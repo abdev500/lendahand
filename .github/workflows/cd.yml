@@ -50,7 +50,7 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
           cluster_name: ${{ env.GKE_CLUSTER }}
-          location: ${{ env.GAR_LOCATION }}  
+          location: ${{ env.GKE_ZONE }}  
 
 
       - name: 'Build and push Docker container back'
