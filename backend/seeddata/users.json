@@ -1,0 +1,29 @@
+[
+  {
+    "email": "user1@example.com",
+    "password": "User1Pass123!",
+    "username": "user1",
+    "is_moderator": false,
+    "is_staff": false,
+    "is_superuser": false,
+    "creates_campaigns": true
+  },
+  {
+    "email": "user2@example.com",
+    "password": "User2Pass123!",
+    "username": "user2",
+    "is_moderator": false,
+    "is_staff": false,
+    "is_superuser": false,
+    "creates_campaigns": true
+  },
+  {
+    "email": "user@example.com",
+    "password": "TestUser123!",
+    "username": "testuser",
+    "is_moderator": false,
+    "is_staff": false,
+    "is_superuser": false,
+    "creates_campaigns": true
+  }
+]

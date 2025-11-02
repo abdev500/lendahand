@@ -87,12 +87,7 @@ If you prefer to set up manually:
    python manage.py createsuperuser
    ```
 
-6. **Seed database**:
-   ```bash
-   python manage.py seed_data
-   ```
-
-7. **Start Django server**:
+6. **Start Django server**:
    ```bash
    python manage.py runserver
    ```
@@ -150,7 +145,7 @@ Create a `.env` file or set these environment variables:
 
 ## Default Users
 
-After running `seed_data`, these users are available:
+After running `setup-db.sh`, these users are available:
 
 - **Admin**: `admin@lendahand.me` / `admin` (superuser, moderator)
 - **Moderator**: `moderator@lendahand.me` / `moderator` (moderator)
@@ -209,4 +204,3 @@ bs/
 ## License
 
 This project is part of the lend-a-hand.me platform.
-

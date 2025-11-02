@@ -1,0 +1,82 @@
+[
+  {
+    "title": "Support for Belarusian Families",
+    "short_description": "Helping families affected by political unrest in Belarus",
+    "description": "<p>This campaign aims to provide financial assistance to families who have been affected by the ongoing political situation in Belarus. Your donations will help cover basic needs such as food, housing, and medical expenses.</p><p>We work directly with local organizations to ensure that funds reach those who need it most.</p>",
+    "target_amount": 50000,
+    "status": "approved",
+    "images": ["humanitarian_1.jpg", "humanitarian_2.jpg", "humanitarian_3.jpg", "humanitarian_4.jpg", "support_1.jpg", "support_2.jpg"]
+  },
+  {
+    "title": "Ukrainian Refugee Relief Fund",
+    "short_description": "Emergency support for Ukrainian refugees",
+    "description": "<p>As the conflict continues, millions of Ukrainians have been displaced. This fund provides immediate relief for refugees including housing, food, and essential supplies.</p>",
+    "target_amount": 100000,
+    "status": "approved",
+    "images": ["refugee_1.jpg", "refugee_2.jpg", "refugee_3.jpg", "refugee_4.jpg"]
+  },
+  {
+    "title": "Medical Equipment for Hospitals",
+    "short_description": "Supporting healthcare facilities with critical equipment",
+    "description": "<p>Hospitals in affected regions are in urgent need of medical equipment. Your donation helps purchase vital supplies.</p>",
+    "target_amount": 75000,
+    "status": "pending",
+    "images": ["medical_1.jpg", "medical_2.jpg", "medical_3.jpg", "medical_4.jpg"]
+  },
+  {
+    "title": "Education Support Program",
+    "short_description": "Ensuring children continue their education",
+    "description": "<p>Many children have been forced to leave their schools. This program provides educational materials and support for displaced students.</p>",
+    "target_amount": 30000,
+    "status": "approved",
+    "images": ["education_1.jpg", "education_2.jpg", "education_3.jpg", "education_4.jpg"]
+  },
+  {
+    "title": "Emergency Food Distribution",
+    "short_description": "Providing meals to those in need",
+    "description": "<p>Food security is critical. This campaign supports food distribution centers in affected areas.</p>",
+    "target_amount": 40000,
+    "status": "approved",
+    "images": ["food_1.jpg", "food_2.jpg", "food_3.jpg", "food_4.jpg"]
+  },
+  {
+    "title": "Mental Health Support",
+    "short_description": "Counseling and psychological support services",
+    "description": "<p>Trauma counseling is essential for those affected by conflict and displacement. This fund supports mental health professionals.</p>",
+    "target_amount": 25000,
+    "status": "rejected",
+    "images": ["support_1.jpg", "support_2.jpg", "support_3.jpg", "support_4.jpg"]
+  },
+  {
+    "title": "Winter Clothing Drive",
+    "short_description": "Warm clothing for those facing harsh winters",
+    "description": "<p>Winter can be particularly difficult for displaced families. This campaign provides warm clothing and blankets.</p>",
+    "target_amount": 20000,
+    "status": "approved",
+    "images": ["humanitarian_3.jpg", "humanitarian_4.jpg", "support_3.jpg", "support_4.jpg"]
+  },
+  {
+    "title": "Children's Safety Fund",
+    "short_description": "Protecting the most vulnerable",
+    "description": "<p>Children need safe spaces and protection. This fund supports child protection programs.</p>",
+    "target_amount": 35000,
+    "status": "draft",
+    "images": ["support_1.jpg", "support_2.jpg", "support_3.jpg", "humanitarian_1.jpg"]
+  },
+  {
+    "title": "Legal Aid Services",
+    "short_description": "Legal support for refugees",
+    "description": "<p>Legal documentation and aid services are crucial for refugees navigating new systems.</p>",
+    "target_amount": 28000,
+    "status": "approved",
+    "images": ["support_2.jpg", "support_3.jpg", "humanitarian_2.jpg", "humanitarian_3.jpg"]
+  },
+  {
+    "title": "Transportation Assistance",
+    "short_description": "Helping people reach safety",
+    "description": "<p>Transportation costs can be a barrier to safety. This fund covers travel expenses for those in need.</p>",
+    "target_amount": 15000,
+    "status": "pending",
+    "images": ["refugee_2.jpg", "refugee_3.jpg", "support_1.jpg", "support_4.jpg"]
+  }
+]

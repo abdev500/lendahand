@@ -1,6 +1,6 @@
 # Seed Images
 
-This folder contains sample images used by the `seed_data` management command to populate campaigns with realistic media.
+This folder contains sample images used by the `seeddata/seed.py` script to populate campaigns and news articles with realistic media via REST API.
 
 ## Image Categories
 
@@ -13,7 +13,7 @@ This folder contains sample images used by the `seed_data` management command to
 
 ## Usage
 
-The `seed_data` command automatically assigns 3-4 images from the appropriate category to each campaign based on its theme.
+The `seeddata/seed.py` script assigns images from the appropriate category to each campaign based on the image list specified in `campaigns.json` and `news.json`.
 
 ## Image Sources
 
@@ -22,4 +22,3 @@ Images are sourced from:
 - Programmatically generated images with themes
 
 All images are 800x600 pixels and optimized for web use.
-

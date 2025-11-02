@@ -1,0 +1,23 @@
+{{- if .Values.storage.minio.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "lendahand.fullname" . }}-minio
+  labels:
+    {{- include "lendahand.labels" . | nindent 4 }}
+    app.kubernetes.io/component: storage
+spec:
+  type: {{ .Values.storage.minio.service.type | default "ClusterIP" }}
+  ports:
+  - port: {{ .Values.storage.minio.service.port | default 9000 }}
+    targetPort: api
+    protocol: TCP
+    name: api
+  - port: {{ .Values.storage.minio.service.consolePort | default 9001 }}
+    targetPort: console
+    protocol: TCP
+    name: console
+  selector:
+    {{- include "lendahand.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: storage
+{{- end }}
