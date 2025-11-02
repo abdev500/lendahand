@@ -41,10 +41,8 @@ backend:
     STRIPE_WEBHOOK_SECRET: ""
     ALLOWED_HOSTS: "*"
     # MinIO/S3 Storage Configuration
+    # MinIO is managed by the infra chart - service name: infra-minio
     USE_S3_STORAGE: "True"
-    # MinIO service URL - will be set in deployment template
-    AWS_ACCESS_KEY_ID: "minioadmin"  # Should match storage.minio.auth.rootUser
-    AWS_SECRET_ACCESS_KEY: "minioadmin"  # Should match storage.minio.auth.rootPassword
     AWS_STORAGE_BUCKET_NAME: "lendahand-media"
     AWS_S3_USE_SSL: "False"
 
@@ -57,20 +55,6 @@ backend:
 #    requests:
 #      cpu: 500m
 #      memory: 512Mi
-
-  livenessProbe:
-    httpGet:
-      path: /api/health/
-      port: http
-    initialDelaySeconds: 30
-    periodSeconds: 10
-
-  readinessProbe:
-    httpGet:
-      path: /api/health/
-      port: http
-    initialDelaySeconds: 10
-    periodSeconds: 5
 
   nodeSelector: {}
   tolerations: []
@@ -117,71 +101,15 @@ frontend:
       cpu: 100m
       memory: 128Mi
 
-  livenessProbe:
-    httpGet:
-      path: /
-      port: http
-    initialDelaySeconds: 30
-    periodSeconds: 10
-
-  readinessProbe:
-    httpGet:
-      path: /
-      port: http
-    initialDelaySeconds: 10
-    periodSeconds: 5
-
   nodeSelector: {}
   tolerations: []
   affinity: {}
 
-# Storage - MinIO (S3-compatible object storage)
+# Storage - MinIO is now managed by the infra chart
+# Configure MinIO via devops/infra/values.yaml
 storage:
   minio:
-    enabled: true
-    replicaCount: 1
-
-    image:
-      repository: minio/minio
-      tag: "latest"
-      pullPolicy: IfNotPresent
-
-    service:
-      type: ClusterIP
-      port: 9000
-      consolePort: 9001
-
-    auth:
-      rootUser: "minioadmin"
-      rootPassword: "minioadmin"  # Change in production!
-
-    persistence:
-      enabled: true
-      size: 10Gi
-      accessMode: ReadWriteOnce
-      storageClass: ""  # Use default storage class
-
-    resources:
-      limits:
-        cpu: 500m
-        memory: 512Mi
-      requests:
-        cpu: 100m
-        memory: 128Mi
-
-    livenessProbe:
-      initialDelaySeconds: 30
-      periodSeconds: 10
-      timeoutSeconds: 5
-
-    readinessProbe:
-      initialDelaySeconds: 10
-      periodSeconds: 5
-      timeoutSeconds: 5
-
-    nodeSelector: {}
-    tolerations: []
-    affinity: {}
+    enabled: true  # Set to true to enable MinIO integration in backend deployment
 
 ingress:
   enabled: true

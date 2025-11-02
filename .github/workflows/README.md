@@ -67,17 +67,49 @@ Configure these secrets in your GitHub repository settings:
 
 ### For Google Kubernetes Engine (GKE) Deployment
 
-**Development Environment:**
-- `GCP_SA_KEY_DEV`: Google Cloud service account key JSON (for development)
+**Workload Identity Federation (Used by infra-gke.yml):**
+
+**Production Environment:**
+- `WIF_PROVIDER`: Workload Identity Provider identifier (e.g., `projects/123456789/locations/global/workloadIdentityPools/github-pool/providers/github-provider`)
+- `WIF_SERVICE_ACCOUNT`: Google Cloud service account email (e.g., `github-actions@test-donate-472114.iam.gserviceaccount.com`)
+
+**Note:** Workload Identity Federation eliminates the need for service account keys and is more secure.
+
+**Setup Instructions:**
+1. Create a Workload Identity Pool in Google Cloud:
+   ```bash
+   gcloud iam workload-identity-pools create github-pool \
+     --project="test-donate-472114" \
+     --location="global" \
+     --display-name="GitHub Actions Pool"
+   ```
+
+2. Create a Workload Identity Provider linked to GitHub:
+   ```bash
+   gcloud iam workload-identity-pools providers create-oidc github-provider \
+     --project="test-donate-472114" \
+     --location="global" \
+     --workload-identity-pool="github-pool" \
+     --display-name="GitHub Provider" \
+     --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository" \
+     --issuer-uri="https://token.actions.githubusercontent.com"
+   ```
+
+3. Grant the service account necessary permissions and allow impersonation:
+   ```bash
+   gcloud iam service-accounts add-iam-policy-binding github-actions@test-donate-472114.iam.gserviceaccount.com \
+     --project="test-donate-472114" \
+     --role="roles/iam.workloadIdentityUser" \
+     --member="principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github-pool/attribute.repository/abdev500/lendahand"
+   ```
+
+4. Configure the secrets `WIF_PROVIDER` and `WIF_SERVICE_ACCOUNT` in GitHub repository settings.
+
+**Development Environment (if needed):**
+- `GCP_SA_KEY_DEV`: Google Cloud service account key JSON (for development) - Optional, can also use WIF
 - `GCP_PROJECT_ID_DEV`: Google Cloud project ID (for development)
 - `GKE_CLUSTER_NAME_DEV`: GKE cluster name (e.g., `lendahand-dev`)
 - `GKE_LOCATION_DEV`: GKE cluster location (e.g., `us-central1-a`)
-
-**Production Environment:**
-- `GCP_SA_KEY_PROD`: Google Cloud service account key JSON (for production)
-- `GCP_PROJECT_ID_PROD`: Google Cloud project ID (for production)
-- `GKE_CLUSTER_NAME_PROD`: GKE cluster name (e.g., `lendahand-prod`)
-- `GKE_LOCATION_PROD`: GKE cluster location (e.g., `us-central1-a`)
 
 ### For Build
 
@@ -166,4 +198,3 @@ helm upgrade --install lendahand ./devops/lendahand \
 ### Accessing Logs
 
 View workflow runs in the GitHub Actions tab. Each step shows detailed logs.
-

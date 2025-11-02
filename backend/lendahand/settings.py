@@ -223,10 +223,18 @@ REST_FRAMEWORK = {
 }
 
 # CORS
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+# Get allowed origins from environment variable or use defaults
+CORS_ALLOWED_ORIGINS_ENV = os.getenv("CORS_ALLOWED_ORIGINS", "")
+CORS_ALLOWED_ORIGINS = (
+    [origin.strip() for origin in CORS_ALLOWED_ORIGINS_ENV.split(",") if origin.strip()]
+    if CORS_ALLOWED_ORIGINS_ENV
+    else [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://test.lendahand.me",
+        "https://test.lendahand.me",
+    ]
+)
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in debug mode
 CORS_ALLOW_METHODS = [

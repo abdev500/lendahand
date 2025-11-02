@@ -47,16 +47,16 @@
 4. MinIO Storage (S3-compatible):
 {{- if .Values.storage.minio.enabled }}
    MinIO is enabled for media file storage.
-   Service: {{ include "lendahand.fullname" . }}-minio
+   MinIO is managed by the infra chart.
+   Service: infra-minio
    API Port: 9000
    Console Port: 9001
 
    To access MinIO console:
-   kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "lendahand.fullname" . }}-minio 9001:9001
+   kubectl port-forward -n {{ .Release.Namespace }} svc/infra-minio 9001:9001
    Then visit: http://localhost:9001
 
-   Default credentials: minioadmin/minioadmin (change in production!)
-
+   Note: MinIO configuration is in devops/infra/values.yaml
    Bucket name: lendahand-media (create via console or it will be auto-created on first upload)
 {{- else }}
    MinIO storage is disabled. Media files are stored locally.

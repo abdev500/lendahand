@@ -2,20 +2,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "lendahand.fullname" . }}-minio
+  name: {{ include "infra.fullname" . }}-minio
   labels:
-    {{- include "lendahand.labels" . | nindent 4 }}
+    {{- include "infra.labels" . | nindent 4 }}
     app.kubernetes.io/component: storage
 spec:
   replicas: {{ .Values.storage.minio.replicaCount | default 1 }}
   selector:
     matchLabels:
-      {{- include "lendahand.selectorLabels" . | nindent 6 }}
+      {{- include "infra.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: storage
   template:
     metadata:
       labels:
-        {{- include "lendahand.selectorLabels" . | nindent 8 }}
+        {{- include "infra.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: storage
     spec:
       containers:
@@ -33,12 +33,12 @@ spec:
         - name: MINIO_ROOT_USER
           valueFrom:
             secretKeyRef:
-              name: {{ include "lendahand.fullname" . }}-minio-secret
+              name: {{ include "infra.fullname" . }}-minio-secret
               key: root-user
         - name: MINIO_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ include "lendahand.fullname" . }}-minio-secret
+              name: {{ include "infra.fullname" . }}-minio-secret
               key: root-password
         command:
         - /bin/sh
@@ -52,16 +52,16 @@ spec:
           httpGet:
             path: /minio/health/live
             port: api
-          initialDelaySeconds: {{ .Values.storage.minio.livenessProbe.initialDelaySeconds | default 30 }}
-          periodSeconds: {{ .Values.storage.minio.livenessProbe.periodSeconds | default 10 }}
-          timeoutSeconds: {{ .Values.storage.minio.livenessProbe.timeoutSeconds | default 5 }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
         readinessProbe:
           httpGet:
             path: /minio/health/ready
             port: api
-          initialDelaySeconds: {{ .Values.storage.minio.readinessProbe.initialDelaySeconds | default 10 }}
-          periodSeconds: {{ .Values.storage.minio.readinessProbe.periodSeconds | default 5 }}
-          timeoutSeconds: {{ .Values.storage.minio.readinessProbe.timeoutSeconds | default 5 }}
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
         resources:
           {{- toYaml .Values.storage.minio.resources | nindent 10 }}
       {{- with .Values.storage.minio.nodeSelector }}
@@ -80,7 +80,7 @@ spec:
       - name: minio-data
         {{- if .Values.storage.minio.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ include "lendahand.fullname" . }}-minio-pvc
+          claimName: {{ include "infra.fullname" . }}-minio-pvc
         {{- else }}
         emptyDir: {}
         {{- end }}

@@ -2,8 +2,7 @@ version: '3.8'
 
 services:
   minio:
-    build: .
-    image: lendahand-minio:latest
+    image: minio/minio:latest
     container_name: lendahand-minio
     ports:
       - "${MINIO_API_PORT:-9000}:9000"   # S3 API endpoint

@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "lendahand.fullname" . }}-minio-pvc
+  name: {{ include "infra.fullname" . }}-minio-pvc
   labels:
-    {{- include "lendahand.labels" . | nindent 4 }}
+    {{- include "infra.labels" . | nindent 4 }}
     app.kubernetes.io/component: storage
 spec:
   accessModes:

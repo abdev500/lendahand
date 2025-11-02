@@ -65,16 +65,16 @@ spec:
         {{- end }}
         {{- if .Values.storage.minio.enabled }}
         - name: AWS_S3_ENDPOINT_URL
-          value: "http://{{ include "lendahand.fullname" . }}-minio:9000"
+          value: "http://infra-minio:9000"
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
-              name: {{ include "lendahand.fullname" . }}-minio-secret
+              name: infra-minio-secret
               key: root-user
         - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ include "lendahand.fullname" . }}-minio-secret
+              name: infra-minio-secret
               key: root-password
         {{- end }}
         {{- with .Values.backend.envFrom }}
@@ -82,9 +82,17 @@ spec:
           {{- toYaml . | nindent 10 }}
         {{- end }}
         livenessProbe:
-          {{- toYaml .Values.backend.livenessProbe | nindent 10 }}
+          httpGet:
+            path: /api/health/
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
         readinessProbe:
-          {{- toYaml .Values.backend.readinessProbe | nindent 10 }}
+          httpGet:
+            path: /api/health/
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
         resources:
           {{- toYaml .Values.backend.resources | nindent 10 }}
       {{- with .Values.backend.nodeSelector }}
