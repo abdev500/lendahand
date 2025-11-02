@@ -1,6 +1,4 @@
 name: 'Build and Deploy to GKE Infra'
-
-
 on:
   workflow_call:
     inputs:
@@ -17,21 +15,17 @@ jobs:
     name: 'Setup, Build, Publish, and Deploy'
     runs-on: 'ubuntu-latest'
     environment: 'production'
-
     permissions:
       contents: 'read'
       id-token: 'write'
-
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332' # actions/checkout@v4
-
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v3'
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-
       - name: Get GKE credentials (no plugin needed)
         uses: google-github-actions/get-gke-credentials@v3
         with:
