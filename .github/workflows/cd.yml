@@ -15,7 +15,7 @@ on:
 env:
   PROJECT_ID: 'test-donate-472114'
   GAR_LOCATION: 'us-central1'
-  GKE_CLUSTER: 'lendahand-testenv'
+  GKE_CLUSTER: 'lendahand-test'
   GKE_ZONE: 'us-central1-a'
   REPOSITORY: 'donatereg'
   IMAGE: 'backend'
@@ -79,6 +79,6 @@ jobs:
       - name: 'Deploy GKE'
         run: |-
           echo "Using a hash commit:"${GITHUB_SHA}
-          helm upgrade lendahand devops/lendahand --set backend.image.tag=${GITHUB_SHA} --set frontend.image.tag=${GITHUB_SHA}
+          helm upgrade --install lendahand devops/lendahand --set backend.image.tag=${GITHUB_SHA} --set frontend.image.tag=${GITHUB_SHA}
           kubectl get pods -A
 

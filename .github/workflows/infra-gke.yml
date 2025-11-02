@@ -12,7 +12,7 @@ on:
 env:
   PROJECT_ID: 'test-donate-472114'
   GAR_LOCATION: 'us-central1'
-  GKE_CLUSTER: 'lendahand-testenv'
+  GKE_CLUSTER: 'lendahand-test'
   GKE_ZONE: 'us-central1-a'
   REPOSITORY: 'donatereg'
   IMAGESTORAGE: 'miniostor'
@@ -64,5 +64,5 @@ jobs:
 
       - name: 'Deploy to GKE'
         run: |-
-          helm upgrade infra devops/infra 
+          helm upgrade --install infra devops/infra 
           kubectl get pods -A
