@@ -64,8 +64,10 @@ spec:
         {{- end }}
         {{- end }}
         {{- if .Values.storage.minio.enabled }}
+        {{- if not (hasKey .Values.backend.env "AWS_S3_ENDPOINT_URL") }}
         - name: AWS_S3_ENDPOINT_URL
           value: "http://infra-minio:9000"
+        {{- end }}
         # AWS_S3_CUSTOM_DOMAIN not needed - files served through Django backend
         - name: AWS_ACCESS_KEY_ID
           valueFrom:

@@ -1,0 +1,48 @@
+name: 'Build and Deploy to GKE Infra'
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      config_path:
+        required: false
+        type: string
+        default: "config/config.${{ inputs.environment }}.yml"
+
+jobs:
+  setup-build-publish-deploy:
+    name: 'Setup, Build, Publish, and Deploy'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332' # actions/checkout@v4
+      - name: Load environment file
+        run: |
+          envfile="config/env.${{ inputs.environment }}"
+          echo "Loading $envfile"
+          # sanitize to KEY=VALUE lines only
+          grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$envfile" >> "$GITHUB_ENV"
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v3'
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+      - name: Get GKE credentials (no plugin needed)
+        uses: google-github-actions/get-gke-credentials@v3
+        with:
+          project_id: ${{ env.K8_PROJECT_ID }}
+          cluster_name: ${{ env.K8_GKE_CLUSTER }}
+          location: ${{ env.K8_GKE_ZONE }}
+
+      - name: 'Deploy to GKE'
+        run: |-
+          helm upgrade --install infra devops/infra \
+            --namespace ${{ env.K8_NAMESPACE }} \
+            --create-namespace \
+            --set "storage.minio.ingress.hosts[0].host=${{ env.URL_MINIIO_CONSOLE }}" \
+            --set "storage.minio.ingress.hosts[1].host=${{ env.URL_MINIIO_API }}"
+          kubectl get pods -A --namespace ${{ env.K8_NAMESPACE }}

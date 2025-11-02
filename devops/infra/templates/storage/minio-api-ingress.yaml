@@ -4,14 +4,16 @@
 {{- if and .Values.storage.minio.ingress.className (not (hasPrefix "nginx" .Values.storage.minio.ingress.className)) }}
 {{- fail "Only nginx ingress controller is supported" }}
 {{- end }}
-{{- range .Values.storage.minio.ingress.hosts }}
-{{- if .apiPaths }}
-{{- $host := .host }}
+{{- range $i, $hostConfig := .Values.storage.minio.ingress.hosts }}
+{{- $host := $hostConfig.host | default "" }}
+{{- if and $host (or $hostConfig.apiPaths (and (not $hostConfig.paths) (gt $i 0))) }}
+{{- $apiPaths := $hostConfig.apiPaths | default (list (dict "path" "/" "pathType" "Prefix")) }}
+{{- if $apiPaths }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ $fullName }}-minio-api
+  name: {{ $fullName }}-minio-api-{{ $i }}
   labels:
     {{- include "infra.labels" $ | nindent 4 }}
     app.kubernetes.io/component: storage
@@ -40,18 +42,19 @@ spec:
     {{- end }}
   {{- end }}
   rules:
-    {{- range .apiPaths }}
+    {{- range $apiPaths }}
     - host: {{ $host | quote }}
       http:
         paths:
-        - path: {{ .path }}
-          pathType: {{ .pathType }}
+        - path: {{ .path | default "/" }}
+          pathType: {{ .pathType | default "Prefix" }}
           backend:
             service:
               name: {{ $fullName }}-minio
               port:
                 number: {{ $apiPort }}
     {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

@@ -1,32 +1,19 @@
 name: 'CD'
-
-
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - 'main'
-      - 'cicd'
-    paths:
-      - "backend/**"
-      - "devops/**"
-
-
-env:
-  PROJECT_ID: 'test-donate-472114'
-  GAR_LOCATION: 'us-central1'
-  GKE_CLUSTER: 'lendahand-test'
-  GKE_ZONE: 'us-central1-a'
-  REPOSITORY: 'donatereg'
-  IMAGE: 'backend'
-  IMAGEFRONT: 'frontend'
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      config_path:
+        required: false
+        type: string
+        default: "config/config.${{ inputs.environment }}.yml"
 
 jobs:
   setup-build-publish-deploy:
     name: 'Setup, Build, Publish, and Deploy'
     runs-on: 'ubuntu-latest'
-    environment: 'production'
-
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -34,28 +21,29 @@ jobs:
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332' # actions/checkout@v4
-
+      - name: Load environment file
+        run: |
+          envfile="config/env.${{ inputs.environment }}"
+          echo "Loading $envfile"
+          # sanitize to KEY=VALUE lines only
+          grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$envfile" >> "$GITHUB_ENV"
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v3'
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev --quiet
-
-
       - name: Get GKE credentials (no plugin needed)
         uses: google-github-actions/get-gke-credentials@v3
         with:
-          project_id: ${{ env.PROJECT_ID }}
-          cluster_name: ${{ env.GKE_CLUSTER }}
-          location: ${{ env.GKE_ZONE }}
-
+          project_id: ${{ env.K8_PROJECT_ID }}
+          cluster_name: ${{ env.K8_GKE_CLUSTER }}
+          location: ${{ env.K8_GKE_ZONE }}
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.K8_GAR_LOCATION }}-docker.pkg.dev --quiet
 
       - name: 'Build and push Docker container back'
         run: |-
-          DOCKER_TAG="${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE}:${GITHUB_SHA}"
+          DOCKER_TAG="${K8_GAR_LOCATION}-docker.pkg.dev/${K8_PROJECT_ID}/${K8_REPOSITORY}/backend:${GITHUB_SHA}"
           docker build \
             --tag "${DOCKER_TAG}" \
             --build-arg GITHUB_SHA="${GITHUB_SHA}" \
@@ -66,7 +54,7 @@ jobs:
 
       - name: 'Build and push Docker container frontend'
         run: |-
-          DOCKER_TAG="${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGEFRONT}:${GITHUB_SHA}"
+          DOCKER_TAG="${K8_GAR_LOCATION}-docker.pkg.dev/${K8_PROJECT_ID}/${K8_REPOSITORY}/frontend:${GITHUB_SHA}"
           docker build \
             --tag "${DOCKER_TAG}" \
             --build-arg GITHUB_SHA="${GITHUB_SHA}" \
@@ -80,9 +68,15 @@ jobs:
         run: |-
           echo "Using a hash commit:"${GITHUB_SHA}
           helm upgrade --install lendahand devops/lendahand \
+            --namespace ${{ env.K8_NAMESPACE }} \
+            --create-namespace \
             --set backend.image.tag=${GITHUB_SHA} \
             --set frontend.image.tag=${GITHUB_SHA} \
+            --set "backend.ingress.hosts[0].host=${{ env.URL_API_INGRESS }}" \
+            --set "backend.env.FRONTEND_URL=${{ env.URL_FRONTEND }}" \
+            --set "frontend.env.REACT_APP_API_URL=${{ env.URL_API }}" \
+            --set "frontend.ingress.hosts[0].host=${{ env.URL_REACT_INGRESS }}" \
             --set backend.env.STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
             --set backend.env.STRIPE_PUBLISHABLE_KEY="${{ secrets.STRIPE_PUBLISHABLE_KEY }}" \
             --set backend.env.STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}"
-          kubectl get pods -A
+          kubectl get pods -A --namespace ${{ env.K8_NAMESPACE }}

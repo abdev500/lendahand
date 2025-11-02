@@ -1,0 +1,21 @@
+name: Deploy Dev
+on:
+  push:
+    branches: [ "develop" ]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  infra:
+    uses: ./.github/workflows/infra.yml
+    with:
+      environment: development
+    secrets: inherit
+  cd:
+    uses: ./.github/workflows/cd.yml
+    with:
+      environment: development
+    secrets: inherit
+
