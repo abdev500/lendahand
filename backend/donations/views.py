@@ -24,6 +24,8 @@ from .serializers import (
     NewsCreateSerializer,
     NewsSerializer,
     PasswordChangeSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     UserRegistrationSerializer,
     UserSerializer,
 )
@@ -99,6 +101,124 @@ def logout_view(request):
     except Exception:
         pass
     return Response({"status": "logged out"})
+
+
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
+def password_reset_request(request):
+    """
+    Request password reset - sends email with reset link.
+    """
+    from django.contrib.auth.tokens import default_token_generator
+    from django.utils.http import urlsafe_base64_encode
+    from django.utils.encoding import force_bytes
+    from django.core.mail import send_mail
+    from django.conf import settings
+
+    serializer = PasswordResetRequestSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    email = serializer.validated_data["email"]
+
+    try:
+        user = User.objects.get(email=email, is_active=True)
+    except User.DoesNotExist:
+        # Don't reveal if email exists for security
+        return Response(
+            {"message": "If this email exists, a password reset link has been sent."},
+            status=status.HTTP_200_OK,
+        )
+
+    # Generate password reset token
+    token = default_token_generator.make_token(user)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+    # Build reset URL
+    reset_url = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
+
+    # Send email
+    try:
+        send_mail(
+            subject="Password Reset Request - Lend a Hand",
+            message=f"""
+Hello,
+
+You requested to reset your password for your Lend a Hand account.
+
+Click the link below to reset your password:
+{reset_url}
+
+This link will expire in 24 hours.
+
+If you didn't request this password reset, please ignore this email.
+
+Best regards,
+Lend a Hand Team
+            """.strip(),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+        logger.info(f"Password reset email sent to {email}")
+    except Exception as e:
+        logger.error(f"Error sending password reset email: {e}")
+        return Response(
+            {"error": "Failed to send password reset email. Please try again later."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return Response(
+        {"message": "If this email exists, a password reset link has been sent."},
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
+def password_reset_confirm(request):
+    """
+    Confirm password reset with token.
+    """
+    from django.contrib.auth.tokens import default_token_generator
+    from django.utils.http import urlsafe_base64_decode
+    from django.utils.encoding import force_str
+
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    uid = serializer.validated_data["uid"]
+    token = serializer.validated_data["token"]
+    new_password = serializer.validated_data["new_password"]
+
+    try:
+        # Decode user ID
+        user_id = force_str(urlsafe_base64_decode(uid))
+        user = User.objects.get(pk=user_id, is_active=True)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        return Response(
+            {"error": "Invalid reset link."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Verify token
+    if not default_token_generator.check_token(user, token):
+        return Response(
+            {"error": "Invalid or expired reset link. Please request a new one."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Set new password
+    user.set_password(new_password)
+    user.save()
+
+    logger.info(f"Password reset successful for user {user.email}")
+
+    return Response(
+        {"message": "Password has been reset successfully."},
+        status=status.HTTP_200_OK,
+    )
 
 
 class CampaignViewSet(viewsets.ModelViewSet):

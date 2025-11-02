@@ -12,8 +12,9 @@ function CampaignDetail() {
   const [campaign, setCampaign] = useState(null)
   const [donations, setDonations] = useState([])
   const [loading, setLoading] = useState(true)
-  const [donationAmount, setDonationAmount] = useState('')
+  const [donationAmount, setDonationAmount] = useState('10')
   const [processing, setProcessing] = useState(false)
+  const predefinedAmounts = [10, 25, 50, 100]
   const success = searchParams.get('success')
 
   useEffect(() => {
@@ -77,7 +78,7 @@ function CampaignDetail() {
 
   const handleDonate = async (e) => {
     e.preventDefault()
-    
+
     // Validate amount
     const amount = parseFloat(donationAmount)
     if (!amount || amount <= 0) {
@@ -102,9 +103,9 @@ function CampaignDetail() {
       }
     } catch (error) {
       console.error('Error creating checkout session:', error)
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.detail || 
-                          error.message || 
+      const errorMessage = error.response?.data?.error ||
+                          error.response?.data?.detail ||
+                          error.message ||
                           t('campaign.donation.error', 'Failed to create donation session. Please try again.')
       alert(errorMessage)
       setProcessing(false)
@@ -131,22 +132,22 @@ function CampaignDetail() {
             {t('campaign.donation.success')}
           </div>
         )}
-        
+
         {(isPending || isDraft) && (
           <div className="warning-message">
-            {isPending 
+            {isPending
               ? t('campaign.pendingWarning')
               : t('campaign.draftWarning')}
           </div>
         )}
-        
+
         <div className="campaign-header">
           <h1>{campaign.title}</h1>
           <p className="campaign-short">{campaign.short_description}</p>
           <div className="campaign-status-badge">
             {t('dashboard.status')}: <span className={`status-${campaign.status}`}>{campaign.status}</span>
           </div>
-          
+
           {/* Progress bar in header */}
           <div className="campaign-header-progress">
             <div className="progress-bar-large">
@@ -158,14 +159,14 @@ function CampaignDetail() {
             <div className="progress-info-large">
               <div className="progress-amount">
                 <span className="progress-label">{t('campaign.raised')}</span>
-                <span className="progress-value-raised">${(campaign.current_amount || 0).toLocaleString()}</span>
+                <span className="progress-value-raised">€{(campaign.current_amount || 0).toLocaleString()}</span>
               </div>
               <div className="progress-percentage-large">
                 {campaign.progress_percentage || 0}%
               </div>
               <div className="progress-amount">
                 <span className="progress-label">{t('campaign.target')}</span>
-                <span className="progress-value-goal">${(campaign.target_amount || 0).toLocaleString()}</span>
+                <span className="progress-value-goal">€{(campaign.target_amount || 0).toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -198,11 +199,11 @@ function CampaignDetail() {
               <div className="progress-stats-sidebar">
                 <div className="progress-stat-item">
                   <span className="label">{t('campaign.raised')}</span>
-                  <span className="value-raised">${(campaign.current_amount || 0).toLocaleString()}</span>
+                  <span className="value-raised">€{(campaign.current_amount || 0).toLocaleString()}</span>
                 </div>
                 <div className="progress-stat-item">
                   <span className="label">{t('campaign.target')}</span>
-                  <span className="value-target">${(campaign.target_amount || 0).toLocaleString()}</span>
+                  <span className="value-target">€{(campaign.target_amount || 0).toLocaleString()}</span>
                 </div>
                 <div className="progress-stat-item progress-percentage-stat">
                   <span className="label">{t('campaign.progress')}</span>
@@ -213,18 +214,30 @@ function CampaignDetail() {
               <form onSubmit={handleDonate} className="donation-form">
                 <h3>{t('campaign.donate')}</h3>
                 <p className="donation-note">{t('campaign.anonymousDonations')}</p>
+                <div className="predefined-amounts">
+                  {predefinedAmounts.map((amount) => (
+                    <button
+                      key={amount}
+                      type="button"
+                      className={`amount-btn ${donationAmount === amount.toString() ? 'active' : ''}`}
+                      onClick={() => setDonationAmount(amount.toString())}
+                    >
+                      €{amount}
+                    </button>
+                  ))}
+                </div>
                 <input
                   type="number"
-                  placeholder={t('campaign.donation.amountPlaceholder', 'Enter amount in USD')}
+                  placeholder={t('campaign.donation.amountPlaceholder', 'Enter amount in EUR')}
                   value={donationAmount}
                   onChange={(e) => setDonationAmount(e.target.value)}
                   required
                   min="1"
                   step="0.01"
                 />
-                <button 
-                  type="submit" 
-                  className="btn-donate" 
+                <button
+                  type="submit"
+                  className="btn-donate"
                   disabled={processing || !donationAmount || parseFloat(donationAmount || 0) <= 0}
                 >
                   {processing ? t('campaign.processing') : t('campaign.donate')}
@@ -247,14 +260,14 @@ function CampaignDetail() {
               <tbody>
                 {donations.map((donation) => (
                   <tr key={donation.id}>
-                    <td>${donation.amount.toLocaleString()}</td>
+                    <td>€{donation.amount.toLocaleString()}</td>
                     <td>{new Date(donation.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p>No donations yet. Be the first!</p>
+            <p>{t('campaign.noDonations', 'No donations yet. Be the first!')}</p>
           )}
         </div>
       </div>
@@ -263,4 +276,3 @@ function CampaignDetail() {
 }
 
 export default CampaignDetail
-

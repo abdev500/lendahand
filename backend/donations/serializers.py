@@ -67,6 +67,22 @@ class PasswordChangeSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True, validators=[validate_password])
 
 
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField(required=True)
+    token = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, validators=[validate_password])
+    new_password2 = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["new_password2"]:
+            raise serializers.ValidationError({"new_password": "Password fields didn't match."})
+        return attrs
+
+
 class CampaignMediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = CampaignMedia

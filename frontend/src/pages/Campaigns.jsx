@@ -32,7 +32,7 @@ function Campaigns() {
       <div className="container">
         <h1>{t('campaigns.title')}</h1>
         {loading ? (
-          <p>Loading...</p>
+          <p>{t('common.loading', 'Loading...')}</p>
         ) : campaigns.length > 0 ? (
           <div className="campaigns-grid">
             {campaigns.map((campaign) => (

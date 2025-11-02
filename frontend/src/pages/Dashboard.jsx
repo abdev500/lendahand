@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../api/axios'
+import ErrorMessage from '../components/ErrorMessage'
+import { extractErrorMessage, logError } from '../utils/errorHandler'
 import './Dashboard.css'
 
 function Dashboard() {
@@ -14,6 +16,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
   const [activeTab, setActiveTab] = useState('campaigns')
   const [showNotesForm, setShowNotesForm] = useState(null)
   const [notes, setNotes] = useState('')
@@ -150,7 +153,7 @@ function Dashboard() {
         setLoading(false)
       }
     } catch (error) {
-      console.error('Error fetching campaigns:', error)
+      logError(error, 'fetchCampaigns')
       setCampaigns([]) // Set empty array on error
       if (!user || (!user.is_moderator && !user.is_staff)) {
         setLoading(false)
@@ -166,7 +169,7 @@ function Dashboard() {
       console.log('Fetched news:', allNews.length, 'items', allNews)
       setNews(allNews)
     } catch (error) {
-      console.error('Error fetching news:', error)
+      logError(error, 'fetchNews')
       setNews([])
     }
   }
@@ -180,7 +183,7 @@ function Dashboard() {
       console.log('Fetched pending campaigns:', allCampaigns.length, 'items')
       setPendingCampaigns(allCampaigns)
     } catch (error) {
-      console.error('Error fetching pending campaigns:', error)
+      logError(error, 'fetchPendingCampaigns')
       setPendingCampaigns([])
     }
   }
@@ -192,10 +195,14 @@ function Dashboard() {
 
     try {
       await api.post(`/campaigns/${campaignId}/suspend/`)
+      setSuccessMessage(t('dashboard.suspendSuccess', 'Campaign suspended successfully!'))
       fetchCampaigns()
+      setTimeout(() => setSuccessMessage(''), 5000)
     } catch (error) {
-      console.error('Error suspending campaign:', error)
-      alert(t('dashboard.suspendError'))
+      logError(error, 'handleSuspend')
+      const errorMsg = extractErrorMessage(error, t('dashboard.suspendError', 'Error suspending campaign'))
+      setErrorMessage(errorMsg)
+      setTimeout(() => setErrorMessage(''), 5000)
     }
   }
 
@@ -206,10 +213,14 @@ function Dashboard() {
 
     try {
       await api.post(`/campaigns/${campaignId}/cancel/`)
+      setSuccessMessage(t('dashboard.cancelSuccess', 'Campaign cancelled successfully!'))
       fetchCampaigns()
+      setTimeout(() => setSuccessMessage(''), 5000)
     } catch (error) {
-      console.error('Error cancelling campaign:', error)
-      alert(t('dashboard.cancelError'))
+      logError(error, 'handleCancel')
+      const errorMsg = extractErrorMessage(error, t('dashboard.cancelError', 'Error cancelling campaign'))
+      setErrorMessage(errorMsg)
+      setTimeout(() => setErrorMessage(''), 5000)
     }
   }
 
@@ -224,8 +235,10 @@ function Dashboard() {
       fetchNews()
       setTimeout(() => setSuccessMessage(''), 5000)
     } catch (error) {
-      console.error('Error toggling news:', error)
-      alert(t('news.toggleError', 'Error updating news status. Please try again.'))
+      logError(error, 'handleToggleNews')
+      const errorMsg = extractErrorMessage(error, t('news.toggleError', 'Error updating news status. Please try again.'))
+      setErrorMessage(errorMsg)
+      setTimeout(() => setErrorMessage(''), 5000)
     }
   }
 
@@ -241,8 +254,10 @@ function Dashboard() {
       fetchNews()
       setTimeout(() => setSuccessMessage(''), 5000)
     } catch (error) {
-      console.error('Error deleting news:', error)
-      alert(t('news.deleteError', 'Error deleting news article. Please try again.'))
+      logError(error, 'handleDeleteNews')
+      const errorMsg = extractErrorMessage(error, t('news.deleteError', 'Error deleting news article. Please try again.'))
+      setErrorMessage(errorMsg)
+      setTimeout(() => setErrorMessage(''), 5000)
     }
   }
 
@@ -257,15 +272,17 @@ function Dashboard() {
       fetchPendingCampaigns()
       setTimeout(() => setSuccessMessage(''), 5000)
     } catch (error) {
-      console.error('Error approving campaign:', error)
-      const errorMsg = error.response?.data?.error || error.response?.data?.detail || t('moderation.approveError', 'Error approving campaign')
-      alert(errorMsg)
+      logError(error, 'handleApproveCampaign')
+      const errorMsg = extractErrorMessage(error, t('moderation.approveError', 'Error approving campaign'))
+      setErrorMessage(errorMsg)
+      setTimeout(() => setErrorMessage(''), 5000)
     }
   }
 
   const handleRejectCampaign = async (campaignId) => {
     if (!notes.trim()) {
-      alert(t('moderation.rejectReasonRequired', 'Rejection reason is required'))
+      setErrorMessage(t('moderation.rejectReasonRequired', 'Rejection reason is required'))
+      setTimeout(() => setErrorMessage(''), 5000)
       return
     }
 
@@ -279,9 +296,10 @@ function Dashboard() {
       fetchPendingCampaigns()
       setTimeout(() => setSuccessMessage(''), 5000)
     } catch (error) {
-      console.error('Error rejecting campaign:', error)
-      const errorMsg = error.response?.data?.error || error.response?.data?.detail || t('moderation.rejectError', 'Error rejecting campaign')
-      alert(errorMsg)
+      logError(error, 'handleRejectCampaign')
+      const errorMsg = extractErrorMessage(error, t('moderation.rejectError', 'Error rejecting campaign'))
+      setErrorMessage(errorMsg)
+      setTimeout(() => setErrorMessage(''), 5000)
     }
   }
 
@@ -336,6 +354,12 @@ function Dashboard() {
             </button>
           </div>
         )}
+        <ErrorMessage
+          message={errorMessage}
+          onClose={() => setErrorMessage('')}
+          autoHide={true}
+          duration={5000}
+        />
         {user && (
           <div className="user-info">
             <p><strong>{t('dashboard.email')}:</strong> {user.email}</p>
@@ -396,7 +420,7 @@ function Dashboard() {
                           )}
                         </p>
                         <p className="campaign-progress">
-                          ${campaign.current_amount.toLocaleString()} / ${campaign.target_amount.toLocaleString()}
+                          €{campaign.current_amount.toLocaleString()} / €{campaign.target_amount.toLocaleString()}
                         </p>
                         {campaign.moderation_notes && (
                           <div className="moderation-notes">

@@ -310,6 +310,37 @@
   margin-bottom: 1.5rem;
 }
 
+.predefined-amounts {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.amount-btn {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--color-red);
+  background: white;
+  color: var(--color-red);
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.amount-btn:hover {
+  background: var(--color-light-gray);
+}
+
+.amount-btn.active {
+  background: var(--color-red);
+  color: white;
+  border-color: var(--color-red);
+}
+
 .donation-form input {
   width: 100%;
   padding: 0.875rem;
@@ -415,4 +446,3 @@
     font-size: 1.5rem;
   }
 }
-

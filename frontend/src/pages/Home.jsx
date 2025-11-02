@@ -44,7 +44,7 @@ function Home() {
         <div className="container">
           <h2>{t('campaigns.title')}</h2>
           {loading ? (
-            <p>Loading...</p>
+            <p>{t('common.loading', 'Loading...')}</p>
           ) : Array.isArray(campaigns) && campaigns.length > 0 ? (
             <div className="campaigns-grid">
               {campaigns.slice(0, 6).map((campaign) => (

@@ -30,7 +30,7 @@ function Register() {
     setError('')
 
     if (formData.password !== formData.password2) {
-      setError('Passwords do not match')
+      setError(t('register.passwordMismatch', 'Passwords do not match'))
       return
     }
 
@@ -43,10 +43,8 @@ function Register() {
       window.location.reload()
     } catch (err) {
       const errorMessage = err.response?.data || {}
-      setError(
-        Object.values(errorMessage).flat().join(', ') ||
-        'Registration failed. Please try again.'
-      )
+      const errorText = Object.values(errorMessage).flat().join(', ') || t('register.error', 'Registration failed. Please try again.')
+      setError(errorText)
       setLoading(false)
     }
   }
@@ -104,11 +102,11 @@ function Register() {
             onChange={handleChange}
           />
           <button type="submit" disabled={loading} className="btn-submit">
-            {loading ? 'Loading...' : t('register.submit')}
+            {loading ? t('common.loading', 'Loading...') : t('register.submit')}
           </button>
         </form>
         <p className="auth-link">
-          Already have an account? <Link to="/login">Login</Link>
+          {t('register.hasAccount', 'Already have an account?')} <Link to="/login">{t('register.loginLink', 'Login')}</Link>
         </p>
       </div>
     </div>
@@ -116,4 +114,3 @@ function Register() {
 }
 
 export default Register
-

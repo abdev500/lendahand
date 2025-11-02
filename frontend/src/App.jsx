@@ -15,6 +15,8 @@ import CreateNews from './pages/CreateNews'
 import EditNews from './pages/EditNews'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import './App.css'
 
 function App() {
@@ -39,6 +41,8 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
         </Routes>
       </main>
     </div>
@@ -46,4 +50,3 @@ function App() {
 }
 
 export default App
-

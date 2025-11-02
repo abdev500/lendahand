@@ -27,7 +27,8 @@ function Login() {
       navigate('/dashboard')
       window.location.reload()
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please try again.')
+      const errorMsg = err.response?.data?.error || t('login.error', 'Login failed. Please try again.')
+      setError(errorMsg)
       setLoading(false)
     }
   }
@@ -53,11 +54,14 @@ function Login() {
             required
           />
           <button type="submit" disabled={loading} className="btn-submit">
-            {loading ? 'Loading...' : t('login.submit')}
+            {loading ? t('common.loading', 'Loading...') : t('login.submit')}
           </button>
         </form>
         <p className="auth-link">
-          Don't have an account? <Link to="/register">Register</Link>
+          <Link to="/forgot-password">{t('login.forgotPassword', 'Forgot password?')}</Link>
+        </p>
+        <p className="auth-link">
+          {t('login.noAccount', "Don't have an account?")} <Link to="/register">{t('login.registerLink', 'Register')}</Link>
         </p>
       </div>
     </div>
@@ -65,4 +69,3 @@ function Login() {
 }
 
 export default Login
-

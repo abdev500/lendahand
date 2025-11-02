@@ -15,12 +15,12 @@ const resources = {
       'nav.admin': 'Administration',
       'nav.settings': 'Account Settings',
       'nav.status.loggedIn': 'Logged in',
-      
+
       // Home
       'home.hero.title': 'Lend a Hand',
       'home.hero.subtitle': 'Making a difference, one donation at a time',
       'home.hero.cta': 'Donate Now',
-      
+
       // Campaigns
       'campaigns.title': 'Campaigns',
       'campaign.donate': 'Donate',
@@ -31,7 +31,7 @@ const resources = {
       'campaign.donation.amount': 'Amount',
       'campaign.donation.date': 'Date',
       'campaign.donation.anonymous': 'Anonymous',
-      'campaign.donation.amountPlaceholder': 'Enter amount in USD',
+      'campaign.donation.amountPlaceholder': 'Enter amount in EUR',
       'campaign.donation.invalidAmount': 'Please enter a valid donation amount.',
       'campaign.donation.error': 'Failed to create donation session. Please try again.',
       'campaign.create': 'Create Campaign',
@@ -40,7 +40,7 @@ const resources = {
       'campaign.title': 'Title',
       'campaign.shortDescription': 'Short Description',
       'campaign.description': 'Full Description',
-      'campaign.targetAmount': 'Target Amount (USD)',
+      'campaign.targetAmount': 'Target Amount (EUR)',
       'campaign.mediaFiles': 'Media Files (Images/Videos) - Up to 6 files total',
       'campaign.submit': 'Create Campaign',
       'campaign.save': 'Save Changes',
@@ -58,7 +58,8 @@ const resources = {
       'campaign.editError': 'Failed to update campaign. Please try again.',
       'campaign.donation.success': 'Thank you for your donation!',
       'campaign.noDescription': 'No description provided.',
-      
+      'campaign.noDonations': 'No donations yet. Be the first!',
+
       // Status
       'status.draft': 'Draft',
       'status.pending': 'Pending Moderation',
@@ -67,7 +68,7 @@ const resources = {
       'status.suspended': 'Suspended',
       'status.cancelled': 'Cancelled',
       'status.awaitingApproval': 'Awaiting moderator approval',
-      
+
       // Dashboard
       'dashboard.title': 'My Dashboard',
       'dashboard.myCampaigns': 'My Campaigns',
@@ -87,7 +88,7 @@ const resources = {
       'dashboard.cancelConfirm': 'Are you sure you want to cancel this campaign?',
       'dashboard.suspendError': 'Error suspending campaign',
       'dashboard.cancelError': 'Error cancelling campaign',
-      
+
       // Settings
       'settings.title': 'Account Settings',
       'settings.tab.profile': 'Profile',
@@ -112,7 +113,7 @@ const resources = {
       'settings.password.error': 'Failed to change password. Please try again.',
       'settings.password.mismatch': 'New passwords do not match',
       'settings.password.minLength': 'Password must be at least 8 characters long',
-      
+
       // News
       'news.title': 'News',
       'news.content': 'Content',
@@ -139,7 +140,7 @@ const resources = {
       'news.deletedSuccess': 'News article deleted successfully!',
       'news.deleteError': 'Error deleting news article. Please try again.',
       'dashboard.newsManagement': 'News Management',
-      
+
       // Moderation
       'moderation.title': 'Moderation',
       'moderation.pendingCampaigns': 'Pending Campaigns',
@@ -157,7 +158,7 @@ const resources = {
       'moderation.rejectError': 'Error rejecting campaign',
       'moderation.rejectReasonRequired': 'Rejection reason is required',
       'moderation.noPendingCampaigns': 'No pending campaigns to moderate.',
-      
+
       // Login
       'login.title': 'Login',
       'login.email': 'Email',
@@ -165,7 +166,10 @@ const resources = {
       'login.submit': 'Sign In',
       'login.loading': 'Loading...',
       'login.error': 'Login failed. Please try again.',
-      
+      'login.forgotPassword': 'Forgot password?',
+      'login.noAccount': "Don't have an account?",
+      'login.registerLink': 'Register',
+
       // Register
       'register.title': 'Register',
       'register.email': 'Email',
@@ -178,7 +182,29 @@ const resources = {
       'register.loading': 'Loading...',
       'register.error': 'Registration failed. Please try again.',
       'register.passwordMismatch': 'Passwords do not match',
-      
+      'register.passwordTooShort': 'Password must be at least 8 characters long',
+      'register.hasAccount': 'Already have an account?',
+      'register.loginLink': 'Login',
+
+      // Password Reset
+      'forgotPassword.title': 'Forgot Password',
+      'forgotPassword.description': 'Enter your email address and we\'ll send you a link to reset your password.',
+      'forgotPassword.email': 'Email address',
+      'forgotPassword.submit': 'Send Reset Link',
+      'forgotPassword.backToLogin': 'Back to Login',
+      'forgotPassword.success': 'If this email exists, a password reset link has been sent to your email.',
+      'forgotPassword.error': 'Failed to send password reset email. Please try again.',
+
+      'resetPassword.title': 'Reset Password',
+      'resetPassword.description': 'Enter your new password below.',
+      'resetPassword.newPassword': 'New Password',
+      'resetPassword.confirmPassword': 'Confirm New Password',
+      'resetPassword.submit': 'Reset Password',
+      'resetPassword.backToLogin': 'Back to Login',
+      'resetPassword.success': 'Password has been reset successfully.',
+      'resetPassword.error': 'Failed to reset password. Please try again.',
+      'resetPassword.invalidLink': 'Invalid reset link. Please request a new password reset.',
+
       // Common
       'common.required': 'Required',
       'common.loading': 'Loading...',
@@ -189,7 +215,7 @@ const resources = {
       'common.delete': 'Delete',
       'common.edit': 'Edit',
       'common.view': 'View',
-      'common.amount': 'Amount (USD)',
+      'common.amount': 'Amount (EUR)',
       'common.placeholder': 'Enter amount',
       'common.donationError': 'Error processing donation. Please try again.',
     },
@@ -206,12 +232,12 @@ const resources = {
       'nav.admin': 'Администрация',
       'nav.settings': 'Настройки аккаунта',
       'nav.status.loggedIn': 'Вход выполнен',
-      
+
       // Home
       'home.hero.title': 'Помощь',
       'home.hero.subtitle': 'Делаем мир лучше, одно пожертвование за раз',
       'home.hero.cta': 'Пожертвовать',
-      
+
       // Campaigns
       'campaigns.title': 'Кампании',
       'campaign.donate': 'Пожертвовать',
@@ -228,7 +254,7 @@ const resources = {
       'campaign.title': 'Название',
       'campaign.shortDescription': 'Краткое описание',
       'campaign.description': 'Полное описание',
-      'campaign.targetAmount': 'Целевая сумма (USD)',
+      'campaign.targetAmount': 'Целевая сумма (EUR)',
       'campaign.mediaFiles': 'Медиафайлы (Изображения/Видео) - До 6 файлов',
       'campaign.submit': 'Создать кампанию',
       'campaign.save': 'Сохранить изменения',
@@ -246,7 +272,8 @@ const resources = {
       'campaign.editError': 'Не удалось обновить кампанию. Попробуйте еще раз.',
       'campaign.donation.success': 'Спасибо за ваше пожертвование!',
       'campaign.noDescription': 'Описание не предоставлено.',
-      
+      'campaign.noDonations': 'Пожертвований пока нет. Станьте первым!',
+
       // Status
       'status.draft': 'Черновик',
       'status.pending': 'Ожидает модерации',
@@ -255,7 +282,7 @@ const resources = {
       'status.suspended': 'Приостановлена',
       'status.cancelled': 'Отменена',
       'status.awaitingApproval': 'Ожидает одобрения модератора',
-      
+
       // Dashboard
       'dashboard.title': 'Моя панель управления',
       'dashboard.myCampaigns': 'Мои кампании',
@@ -274,7 +301,7 @@ const resources = {
       'dashboard.cancelConfirm': 'Вы уверены, что хотите отменить эту кампанию?',
       'dashboard.suspendError': 'Ошибка при приостановке кампании',
       'dashboard.cancelError': 'Ошибка при отмене кампании',
-      
+
       // Settings
       'settings.title': 'Настройки аккаунта',
       'settings.tab.profile': 'Профиль',
@@ -299,7 +326,7 @@ const resources = {
       'settings.password.error': 'Не удалось изменить пароль. Попробуйте еще раз.',
       'settings.password.mismatch': 'Новые пароли не совпадают',
       'settings.password.minLength': 'Пароль должен содержать не менее 8 символов',
-      
+
       // News
       'news.title': 'Новости',
       'news.content': 'Содержание',
@@ -326,7 +353,7 @@ const resources = {
       'news.deletedSuccess': 'Новость успешно удалена!',
       'news.deleteError': 'Ошибка удаления новости. Попробуйте еще раз.',
       'dashboard.newsManagement': 'Управление новостями',
-      
+
       // Login
       'login.title': 'Вход',
       'login.email': 'Email',
@@ -334,7 +361,10 @@ const resources = {
       'login.submit': 'Войти',
       'login.loading': 'Загрузка...',
       'login.error': 'Ошибка входа. Попробуйте еще раз.',
-      
+      'login.forgotPassword': 'Забыли пароль?',
+      'login.noAccount': 'Нет аккаунта?',
+      'login.registerLink': 'Зарегистрироваться',
+
       // Register
       'register.title': 'Регистрация',
       'register.email': 'Email',
@@ -347,7 +377,29 @@ const resources = {
       'register.loading': 'Загрузка...',
       'register.error': 'Ошибка регистрации. Попробуйте еще раз.',
       'register.passwordMismatch': 'Пароли не совпадают',
-      
+      'register.passwordTooShort': 'Пароль должен содержать не менее 8 символов',
+      'register.hasAccount': 'Уже есть аккаунт?',
+      'register.loginLink': 'Войти',
+
+      // Password Reset
+      'forgotPassword.title': 'Забыли пароль',
+      'forgotPassword.description': 'Введите ваш email и мы отправим ссылку для сброса пароля.',
+      'forgotPassword.email': 'Email адрес',
+      'forgotPassword.submit': 'Отправить ссылку',
+      'forgotPassword.backToLogin': 'Вернуться к входу',
+      'forgotPassword.success': 'Если этот email существует, ссылка для сброса пароля была отправлена на вашу почту.',
+      'forgotPassword.error': 'Не удалось отправить email для сброса пароля. Попробуйте еще раз.',
+
+      'resetPassword.title': 'Сброс пароля',
+      'resetPassword.description': 'Введите новый пароль ниже.',
+      'resetPassword.newPassword': 'Новый пароль',
+      'resetPassword.confirmPassword': 'Подтвердите новый пароль',
+      'resetPassword.submit': 'Сбросить пароль',
+      'resetPassword.backToLogin': 'Вернуться к входу',
+      'resetPassword.success': 'Пароль успешно сброшен.',
+      'resetPassword.error': 'Не удалось сбросить пароль. Попробуйте еще раз.',
+      'resetPassword.invalidLink': 'Неверная ссылка для сброса. Пожалуйста, запросите новую.',
+
       // Common
       'common.required': 'Обязательно',
       'common.loading': 'Загрузка...',
@@ -358,7 +410,7 @@ const resources = {
       'common.delete': 'Удалить',
       'common.edit': 'Редактировать',
       'common.view': 'Просмотр',
-      'common.amount': 'Сумма (USD)',
+      'common.amount': 'Сумма (EUR)',
       'common.placeholder': 'Введите сумму',
       'common.donationError': 'Ошибка обработки пожертвования. Попробуйте еще раз.',
     },
@@ -375,12 +427,12 @@ const resources = {
       'nav.admin': 'Адміністрацыя',
       'nav.settings': 'Налады акаўнта',
       'nav.status.loggedIn': 'Увайшоў',
-      
+
       // Home
       'home.hero.title': 'Дапамога',
       'home.hero.subtitle': 'Рабім свет лепшым, адно ахвяраванне за разам',
       'home.hero.cta': 'Ахвяраваць',
-      
+
       // Campaigns
       'campaigns.title': 'Кампаніі',
       'campaign.donate': 'Ахвяраваць',
@@ -397,7 +449,7 @@ const resources = {
       'campaign.title': 'Назва',
       'campaign.shortDescription': 'Кароткае апісанне',
       'campaign.description': 'Поўнае апісанне',
-      'campaign.targetAmount': 'Мэтавая сума (USD)',
+      'campaign.targetAmount': 'Мэтавая сума (EUR)',
       'campaign.mediaFiles': 'Медыйныя файлы (Выявы/Відэа) - Да 6 файлаў',
       'campaign.submit': 'Стварыць кампанію',
       'campaign.save': 'Захаваць змены',
@@ -415,7 +467,8 @@ const resources = {
       'campaign.editError': 'Не ўдалося абнавіць кампанію. Паспрабуйце яшчэ раз.',
       'campaign.donation.success': 'Дзякуй за ваша ахвяраванне!',
       'campaign.noDescription': 'Апісанне не прадастаўлена.',
-      
+      'campaign.noDonations': 'Ахвяраванняў пакуль няма. Станьце першым!',
+
       // Status
       'status.draft': 'Чарнавік',
       'status.pending': 'Чакае мадэрацыі',
@@ -424,7 +477,7 @@ const resources = {
       'status.suspended': 'Прыпынена',
       'status.cancelled': 'Скасавана',
       'status.awaitingApproval': 'Чакае зацвярджэння мадэратара',
-      
+
       // Dashboard
       'dashboard.title': 'Мая панэль кіравання',
       'dashboard.myCampaigns': 'Мае кампаніі',
@@ -443,7 +496,7 @@ const resources = {
       'dashboard.cancelConfirm': 'Вы ўпэўнены, што хочаце скасаваць гэтую кампанію?',
       'dashboard.suspendError': 'Памылка пры прыпыненні кампаніі',
       'dashboard.cancelError': 'Памылка пры скасаванні кампаніі',
-      
+
       // Settings
       'settings.title': 'Налады акаўнта',
       'settings.tab.profile': 'Профіль',
@@ -468,7 +521,7 @@ const resources = {
       'settings.password.error': 'Не ўдалося змяніць пароль. Паспрабуйце яшчэ раз.',
       'settings.password.mismatch': 'Новыя паролі не супадаюць',
       'settings.password.minLength': 'Пароль павінен змяшчаць не менш за 8 сімвалаў',
-      
+
       // News
       'news.title': 'Навіны',
       'news.content': 'Змесціва',
@@ -495,7 +548,7 @@ const resources = {
       'news.deletedSuccess': 'Навіна паспяхова выдалена!',
       'news.deleteError': 'Памылка выдалення навіны. Паспрабуйце яшчэ раз.',
       'dashboard.newsManagement': 'Кіраванне навінамі',
-      
+
       // Login
       'login.title': 'Уваход',
       'login.email': 'Email',
@@ -503,7 +556,10 @@ const resources = {
       'login.submit': 'Увайсці',
       'login.loading': 'Загрузка...',
       'login.error': 'Памылка ўваходу. Паспрабуйце яшчэ раз.',
-      
+      'login.forgotPassword': 'Забылі пароль?',
+      'login.noAccount': 'Няма акаунта?',
+      'login.registerLink': 'Зарэгістравацца',
+
       // Register
       'register.title': 'Рэгістрацыя',
       'register.email': 'Email',
@@ -516,7 +572,29 @@ const resources = {
       'register.loading': 'Загрузка...',
       'register.error': 'Памылка рэгістрацыі. Паспрабуйце яшчэ раз.',
       'register.passwordMismatch': 'Паролі не супадаюць',
-      
+      'register.passwordTooShort': 'Пароль павінен змяшчаць не менш за 8 сімвалаў',
+      'register.hasAccount': 'Ужо ёсць акаунт?',
+      'register.loginLink': 'Увайсці',
+
+      // Password Reset
+      'forgotPassword.title': 'Забылі пароль',
+      'forgotPassword.description': 'Увядзіце ваш email і мы адправім спасылку для скіду пароля.',
+      'forgotPassword.email': 'Email адрас',
+      'forgotPassword.submit': 'Адправіць спасылку',
+      'forgotPassword.backToLogin': 'Вярнуцца да ўваходу',
+      'forgotPassword.success': 'Калі гэты email існуе, спасылка для скіду пароля была адпраўлена на вашу пошту.',
+      'forgotPassword.error': 'Не ўдалося адправіць email для скіду пароля. Паспрабуйце яшчэ раз.',
+
+      'resetPassword.title': 'Скід пароля',
+      'resetPassword.description': 'Увядзіце новы пароль ніжэй.',
+      'resetPassword.newPassword': 'Новы пароль',
+      'resetPassword.confirmPassword': 'Пацвердзіце новы пароль',
+      'resetPassword.submit': 'Скінуць пароль',
+      'resetPassword.backToLogin': 'Вярнуцца да ўваходу',
+      'resetPassword.success': 'Пароль паспяхова скінуты.',
+      'resetPassword.error': 'Не ўдалося скінуць пароль. Паспрабуйце яшчэ раз.',
+      'resetPassword.invalidLink': 'Няверная спасылка для скіду. Калі ласка, запытайце новую.',
+
       // Common
       'common.required': 'Абавязкова',
       'common.loading': 'Загрузка...',
@@ -527,7 +605,7 @@ const resources = {
       'common.delete': 'Выдаліць',
       'common.edit': 'Рэдагаваць',
       'common.view': 'Прагляд',
-      'common.amount': 'Сума (USD)',
+      'common.amount': 'Сума (EUR)',
       'common.placeholder': 'Увядзіце суму',
       'common.donationError': 'Памылка апрацоўкі ахвяравання. Паспрабуйце яшчэ раз.',
     },
@@ -544,12 +622,12 @@ const resources = {
       'nav.admin': 'Administracija',
       'nav.settings': 'Paskyros nustatymai',
       'nav.status.loggedIn': 'Prisijungta',
-      
+
       // Home
       'home.hero.title': 'Padėk Ranką',
       'home.hero.subtitle': 'Kiekvienas aukojimas daro skirtumą',
       'home.hero.cta': 'Paaukoti dabar',
-      
+
       // Campaigns
       'campaigns.title': 'Kampanijos',
       'campaign.donate': 'Paaukoti',
@@ -566,7 +644,7 @@ const resources = {
       'campaign.title': 'Pavadinimas',
       'campaign.shortDescription': 'Trumpas aprašymas',
       'campaign.description': 'Pilnas aprašymas',
-      'campaign.targetAmount': 'Tikslinė suma (USD)',
+      'campaign.targetAmount': 'Tikslinė suma (EUR)',
       'campaign.mediaFiles': 'Medijos failai (Nuotraukos/Vaizdo įrašai) - Iki 6 failų',
       'campaign.submit': 'Sukurti kampaniją',
       'campaign.save': 'Išsaugoti pakeitimus',
@@ -584,7 +662,8 @@ const resources = {
       'campaign.editError': 'Nepavyko atnaujinti kampanijos. Bandykite dar kartą.',
       'campaign.donation.success': 'Ačiū už jūsų auką!',
       'campaign.noDescription': 'Aprašymas nepateiktas.',
-      
+      'campaign.noDonations': 'Aukų dar nėra. Būkite pirmas!',
+
       // Status
       'status.draft': 'Juodraštis',
       'status.pending': 'Laukia moderavimo',
@@ -593,7 +672,7 @@ const resources = {
       'status.suspended': 'Sustabdyta',
       'status.cancelled': 'Atšaukta',
       'status.awaitingApproval': 'Laukia moderatoriaus patvirtinimo',
-      
+
       // Dashboard
       'dashboard.title': 'Mano valdymo skydelis',
       'dashboard.myCampaigns': 'Mano kampanijos',
@@ -612,7 +691,7 @@ const resources = {
       'dashboard.cancelConfirm': 'Ar tikrai norite atšaukti šią kampaniją?',
       'dashboard.suspendError': 'Klaida sustabant kampaniją',
       'dashboard.cancelError': 'Klaida atšaukiant kampaniją',
-      
+
       // Settings
       'settings.title': 'Paskyros nustatymai',
       'settings.tab.profile': 'Profilis',
@@ -637,7 +716,7 @@ const resources = {
       'settings.password.error': 'Nepavyko pakeisti slaptažodžio. Bandykite dar kartą.',
       'settings.password.mismatch': 'Nauji slaptažodžiai nesutampa',
       'settings.password.minLength': 'Slaptažodis turi būti ne mažiau kaip 8 simbolių',
-      
+
       // News
       'news.title': 'Naujienos',
       'news.content': 'Turinys',
@@ -664,7 +743,7 @@ const resources = {
       'news.deletedSuccess': 'Naujiena sėkmingai ištrinta!',
       'news.deleteError': 'Klaida trinant naujieną. Bandykite dar kartą.',
       'dashboard.newsManagement': 'Naujienų valdymas',
-      
+
       // Login
       'login.title': 'Prisijungimas',
       'login.email': 'El. paštas',
@@ -672,7 +751,10 @@ const resources = {
       'login.submit': 'Prisijungti',
       'login.loading': 'Kraunama...',
       'login.error': 'Prisijungti nepavyko. Bandykite dar kartą.',
-      
+      'login.forgotPassword': 'Pamiršote slaptažodį?',
+      'login.noAccount': 'Neturite paskyros?',
+      'login.registerLink': 'Registruotis',
+
       // Register
       'register.title': 'Registracija',
       'register.email': 'El. paštas',
@@ -685,7 +767,29 @@ const resources = {
       'register.loading': 'Kraunama...',
       'register.error': 'Registracija nepavyko. Bandykite dar kartą.',
       'register.passwordMismatch': 'Slaptažodžiai nesutampa',
-      
+      'register.passwordTooShort': 'Slaptažodis turi būti ne mažiau kaip 8 simbolių',
+      'register.hasAccount': 'Jau turite paskyrą?',
+      'register.loginLink': 'Prisijungti',
+
+      // Password Reset
+      'forgotPassword.title': 'Pamiršote slaptažodį',
+      'forgotPassword.description': 'Įveskite savo el. pašto adresą ir mes išsiųsime nuorodą slaptažodžio atkūrimui.',
+      'forgotPassword.email': 'El. pašto adresas',
+      'forgotPassword.submit': 'Siųsti nuorodą',
+      'forgotPassword.backToLogin': 'Grįžti į prisijungimą',
+      'forgotPassword.success': 'Jei šis el. paštas egzistuoja, slaptažodžio atkūrimo nuoroda buvo išsiųsta į jūsų el. paštą.',
+      'forgotPassword.error': 'Nepavyko išsiųsti el. laiško slaptažodžio atkūrimui. Bandykite dar kartą.',
+
+      'resetPassword.title': 'Atkurti slaptažodį',
+      'resetPassword.description': 'Įveskite naują slaptažodį žemiau.',
+      'resetPassword.newPassword': 'Naujas slaptažodis',
+      'resetPassword.confirmPassword': 'Patvirtinkite naują slaptažodį',
+      'resetPassword.submit': 'Atkurti slaptažodį',
+      'resetPassword.backToLogin': 'Grįžti į prisijungimą',
+      'resetPassword.success': 'Slaptažodis sėkmingai atkurtas.',
+      'resetPassword.error': 'Nepavyko atkurti slaptažodžio. Bandykite dar kartą.',
+      'resetPassword.invalidLink': 'Netinkama atkūrimo nuoroda. Prašome užsakyti naują.',
+
       // Common
       'common.required': 'Privaloma',
       'common.loading': 'Kraunama...',
@@ -696,7 +800,7 @@ const resources = {
       'common.delete': 'Ištrinti',
       'common.edit': 'Redaguoti',
       'common.view': 'Peržiūrėti',
-      'common.amount': 'Suma (USD)',
+      'common.amount': 'Suma (EUR)',
       'common.placeholder': 'Įveskite sumą',
       'common.donationError': 'Klaida apdorojant auką. Bandykite dar kartą.',
     },
@@ -713,12 +817,12 @@ const resources = {
       'nav.admin': 'Адміністрація',
       'nav.settings': 'Налаштування акаунта',
       'nav.status.loggedIn': 'Ввійшов',
-      
+
       // Home
       'home.hero.title': 'Допомога',
       'home.hero.subtitle': 'Робимо світ кращим, одне пожертвування за раз',
       'home.hero.cta': 'Пожертвувати',
-      
+
       // Campaigns
       'campaigns.title': 'Кампанії',
       'campaign.donate': 'Пожертвувати',
@@ -735,7 +839,7 @@ const resources = {
       'campaign.title': 'Назва',
       'campaign.shortDescription': 'Короткий опис',
       'campaign.description': 'Повний опис',
-      'campaign.targetAmount': 'Цільова сума (USD)',
+      'campaign.targetAmount': 'Цільова сума (EUR)',
       'campaign.mediaFiles': 'Медіафайли (Зображення/Відео) - До 6 файлів',
       'campaign.submit': 'Створити кампанію',
       'campaign.save': 'Зберегти зміни',
@@ -753,7 +857,8 @@ const resources = {
       'campaign.editError': 'Не вдалося оновити кампанію. Спробуйте ще раз.',
       'campaign.donation.success': 'Дякуємо за ваше пожертвування!',
       'campaign.noDescription': 'Опис не надано.',
-      
+      'campaign.noDonations': 'Пожертвувань поки немає. Станьте першим!',
+
       // Status
       'status.draft': 'Чернетка',
       'status.pending': 'Очікує модерування',
@@ -762,7 +867,7 @@ const resources = {
       'status.suspended': 'Призупинена',
       'status.cancelled': 'Скасована',
       'status.awaitingApproval': 'Очікує затвердження модератора',
-      
+
       // Dashboard
       'dashboard.title': 'Моя панель керування',
       'dashboard.myCampaigns': 'Мої кампанії',
@@ -781,7 +886,7 @@ const resources = {
       'dashboard.cancelConfirm': 'Ви впевнені, що хочете скасувати цю кампанію?',
       'dashboard.suspendError': 'Помилка при призупиненні кампанії',
       'dashboard.cancelError': 'Помилка при скасуванні кампанії',
-      
+
       // Settings
       'settings.title': 'Налаштування акаунта',
       'settings.tab.profile': 'Профіль',
@@ -806,7 +911,7 @@ const resources = {
       'settings.password.error': 'Не вдалося змінити пароль. Спробуйте ще раз.',
       'settings.password.mismatch': 'Нові паролі не співпадають',
       'settings.password.minLength': 'Пароль повинен містити не менше 8 символів',
-      
+
       // News
       'news.title': 'Новини',
       'news.content': 'Зміст',
@@ -833,7 +938,7 @@ const resources = {
       'news.deletedSuccess': 'Новину успішно видалено!',
       'news.deleteError': 'Помилка видалення новини. Спробуйте ще раз.',
       'dashboard.newsManagement': 'Управління новинами',
-      
+
       // Login
       'login.title': 'Вхід',
       'login.email': 'Email',
@@ -841,7 +946,10 @@ const resources = {
       'login.submit': 'Увійти',
       'login.loading': 'Завантаження...',
       'login.error': 'Помилка входу. Спробуйте ще раз.',
-      
+      'login.forgotPassword': 'Забули пароль?',
+      'login.noAccount': 'Немає акаунта?',
+      'login.registerLink': 'Зареєструватися',
+
       // Register
       'register.title': 'Реєстрація',
       'register.email': 'Email',
@@ -854,7 +962,29 @@ const resources = {
       'register.loading': 'Завантаження...',
       'register.error': 'Помилка реєстрації. Спробуйте ще раз.',
       'register.passwordMismatch': 'Паролі не співпадають',
-      
+      'register.passwordTooShort': 'Пароль повинен містити не менше 8 символів',
+      'register.hasAccount': 'Вже є акаунт?',
+      'register.loginLink': 'Увійти',
+
+      // Password Reset
+      'forgotPassword.title': 'Забули пароль',
+      'forgotPassword.description': 'Введіть вашу електронну адресу і ми надішлемо посилання для скидання пароля.',
+      'forgotPassword.email': 'Електронна адреса',
+      'forgotPassword.submit': 'Надіслати посилання',
+      'forgotPassword.backToLogin': 'Повернутися до входу',
+      'forgotPassword.success': 'Якщо ця електронна адреса існує, посилання для скидання пароля було надіслано на вашу пошту.',
+      'forgotPassword.error': 'Не вдалося надіслати email для скидання пароля. Спробуйте ще раз.',
+
+      'resetPassword.title': 'Скидання пароля',
+      'resetPassword.description': 'Введіть новий пароль нижче.',
+      'resetPassword.newPassword': 'Новий пароль',
+      'resetPassword.confirmPassword': 'Підтвердіть новий пароль',
+      'resetPassword.submit': 'Скинути пароль',
+      'resetPassword.backToLogin': 'Повернутися до входу',
+      'resetPassword.success': 'Пароль успішно скинуто.',
+      'resetPassword.error': 'Не вдалося скинути пароль. Спробуйте ще раз.',
+      'resetPassword.invalidLink': 'Невірне посилання для скидання. Будь ласка, запросіть нове.',
+
       // Common
       'common.required': 'Обов\'язково',
       'common.loading': 'Завантаження...',
@@ -865,7 +995,7 @@ const resources = {
       'common.delete': 'Видалити',
       'common.edit': 'Редагувати',
       'common.view': 'Перегляд',
-      'common.amount': 'Сума (USD)',
+      'common.amount': 'Сума (EUR)',
       'common.placeholder': 'Введіть суму',
       'common.donationError': 'Помилка обробки пожертвування. Спробуйте ще раз.',
     },

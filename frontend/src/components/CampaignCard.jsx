@@ -30,8 +30,8 @@ function CampaignCard({ campaign }) {
             />
           </div>
           <div className="progress-stats">
-            <span className="progress-raised">${(campaign.current_amount || 0).toLocaleString()}</span>
-            <span className="progress-target">of ${(campaign.target_amount || 0).toLocaleString()}</span>
+            <span className="progress-raised">€{(campaign.current_amount || 0).toLocaleString()}</span>
+            <span className="progress-target">of €{(campaign.target_amount || 0).toLocaleString()}</span>
             <span className="progress-percentage">{campaign.progress_percentage || 0}%</span>
           </div>
         </div>
@@ -44,4 +44,3 @@ function CampaignCard({ campaign }) {
 }
 
 export default CampaignCard
-
