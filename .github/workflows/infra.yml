@@ -21,20 +21,12 @@ jobs:
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332' # actions/checkout@v4
-      - id: load
-        name: Load config
+      - name: Load environment file
         run: |
-          echo "Reading config/config.${{ inputs.environment }}.yml"
-          python - <<'PY'
-          import yaml, json
-          with open(f"config/config.${{inputs.environment}}.yml") as f:
-              data = yaml.safe_load(f)
-          # flatten the k8 section into env vars
-          for k, v in data["k8"].items():
-              print(f"{k}={v}")
-          PY | while IFS='=' read -r key value; do
-            echo "K8_${key}=${value}" >> "$GITHUB_ENV"
-          done
+          envfile="config/env.${{ inputs.environment }}"
+          echo "Loading $envfile"
+          # sanitize to KEY=VALUE lines only
+          grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$envfile" >> "$GITHUB_ENV"
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v3'
