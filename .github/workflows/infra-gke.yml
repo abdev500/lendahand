@@ -11,8 +11,10 @@ on:
 
 env:
   PROJECT_ID: 'test-donate-472114'
-  GAR_LOCATION: 'us-central1-a'
+  GAR_LOCATION: 'us-central1'
   GKE_CLUSTER: 'lendahand-testenv'
+  GKE_ZONE: 'us-central1-a'
+
 
 jobs:
   setup-build-publish-deploy:
@@ -43,7 +45,7 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
           cluster_name: ${{ env.GKE_CLUSTER }}
-          location: ${{ env.GAR_LOCATION }}  
+          location: ${{ env.GKE_ZONE }}  
 
       - name: 'Build and push Docker container storage minio'
         run: |-
