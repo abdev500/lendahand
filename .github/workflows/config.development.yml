@@ -1,0 +1,8 @@
+k8:
+  GKE_CLUSTER: lendahand-test
+  GAR_LOCATION: us-central1
+  GKE_ZONE: us-central1-a
+  NAMESPACE: develop
+  PROJECT_ID: test-donate-472114
+  REPOSITORY: donatereg
+  PUBLIC_IP: 35.223.46.33

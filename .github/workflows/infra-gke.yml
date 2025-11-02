@@ -1,19 +1,16 @@
 name: 'Build and Deploy to GKE Infra'
 
+
 on:
-  workflow_dispatch:
-  push:
-    paths:
-      - "devops/infra/**"
-    branches:
-      - 'main'
-      - 'cicd'
-
-env:
-  PROJECT_ID: 'test-donate-472114'
-  GKE_CLUSTER: 'lendahand-test'
-  GKE_ZONE: 'us-central1-a'
-
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      config_path:
+        required: false
+        type: string
+        default: "config/config.${{ inputs.environment }}.yml"
 
 jobs:
   setup-build-publish-deploy:
@@ -38,11 +35,11 @@ jobs:
       - name: Get GKE credentials (no plugin needed)
         uses: google-github-actions/get-gke-credentials@v3
         with:
-          project_id: ${{ env.PROJECT_ID }}
-          cluster_name: ${{ env.GKE_CLUSTER }}
-          location: ${{ env.GKE_ZONE }}
+          project_id: ${{ env.k8.PROJECT_ID }}
+          cluster_name: ${{ env.k8.GKE_CLUSTER }}
+          location: ${{ env.k8.GKE_ZONE }}
 
       - name: 'Deploy to GKE'
         run: |-
-          helm upgrade --install infra devops/infra 
-          kubectl get pods -A
+          helm upgrade --install infra devops/infra --namespace ${{ env.k8.NAMESPACE }}   --create-namespace
+          kubectl get pods -A --namespace ${{ env.k8.NAMESPACE }} 

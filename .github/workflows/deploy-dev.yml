@@ -1,0 +1,10 @@
+name: Deploy dev
+on:
+  push:
+    branches: [ "develop" ]
+jobs:
+  call:
+    uses: ./.github/workflows/infra.yml
+    with:
+      environment: development
+
