@@ -27,7 +27,25 @@ function Login() {
       navigate('/dashboard')
       window.location.reload()
     } catch (err) {
-      const errorMsg = err.response?.data?.error || t('login.error', 'Login failed. Please try again.')
+      let errorMsg = t('login.error', 'Login failed. Please try again.')
+
+      if (err.response?.data) {
+        // Handle different error formats
+        if (err.response.data.error) {
+          errorMsg = err.response.data.error
+        } else if (err.response.data.non_field_errors && err.response.data.non_field_errors.length > 0) {
+          errorMsg = err.response.data.non_field_errors[0]
+        } else if (err.response.data.detail) {
+          errorMsg = err.response.data.detail
+        } else if (typeof err.response.data === 'string') {
+          errorMsg = err.response.data
+        } else if (err.response.data.email) {
+          errorMsg = err.response.data.email[0]
+        } else if (err.response.data.password) {
+          errorMsg = err.response.data.password[0]
+        }
+      }
+
       setError(errorMsg)
       setLoading(false)
     }

@@ -45,6 +45,15 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle 401 Unauthorized - clear token and redirect to login
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token')
+      // Only redirect if not already on login page
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+        window.location.href = '/login'
+      }
+    }
+
     // If we get HTML instead of JSON, try to extract error message
     if (error.response && typeof error.response.data === 'string' && error.response.data.trim().startsWith('<!')) {
       // It's HTML, likely an error page
