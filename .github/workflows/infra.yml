@@ -44,6 +44,6 @@ jobs:
           helm upgrade --install infra devops/infra \
             --namespace ${{ env.K8_NAMESPACE }} \
             --create-namespace \
-            --set storage.minio.ingress.hosts[0].host=${{ env.URL_MINIIO_CONSOLE }} \ 
-            --set storage.minio.ingress.hosts[1].host=${{ env.URL_MINIIO_API }}
+            --set storage.minio.ingress.hosts[0].host="${{ env.URL_MINIIO_CONSOLE }}" \
+            --set storage.minio.ingress.hosts[1].host="${{ env.URL_MINIIO_API }}"
           kubectl get pods -A --namespace ${{ env.K8_NAMESPACE }}
