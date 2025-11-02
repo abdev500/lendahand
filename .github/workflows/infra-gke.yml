@@ -15,6 +15,7 @@ env:
   GKE_CLUSTER: 'lendahand-testenv'
   GKE_ZONE: 'us-central1-a'
   REPOSITORY: 'donatereg'
+  IMAGESTORAGE: 'miniostor'
 
 
 jobs:
@@ -50,7 +51,8 @@ jobs:
 
       - name: 'Build and push Docker container storage minio'
         run: |-
-          DOCKER_TAG="${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/storageminio:${GITHUB_SHA}"
+          DOCKER_TAG="${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGESTORAGE}:${GITHUB_SHA}"
+          echo $DOCKER_TAG
           docker build \
             --tag "${DOCKER_TAG}" \
             --build-arg GITHUB_SHA="${GITHUB_SHA}" \

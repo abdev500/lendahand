@@ -16,7 +16,7 @@ env:
   PROJECT_ID: 'test-donate-472114'
   GAR_LOCATION: 'us-central1'
   GKE_CLUSTER: 'lendahand-testenv'
-  GKE_ZONE: 'us-central1-c'
+  GKE_ZONE: 'us-central1-a'
   REPOSITORY: 'donatereg'
   IMAGE: 'backend'
   IMAGEFRONT: 'frontend'
