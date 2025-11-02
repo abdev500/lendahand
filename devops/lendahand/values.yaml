@@ -8,19 +8,19 @@ global:
 backend:
   enabled: true
   replicaCount: 1
-  
+
   image:
     repository: backend
     tag: 98da23a27778a9c272e6d54b8ac87096659e440d
     pullPolicy: IfNotPresent
-  
+
   imagePullSecrets: []
-  
+
   service:
     type: ClusterIP
     port: 8000
     annotations: {}
-  
+
   ingress:
     enabled: true
     className: "nginx"
@@ -31,7 +31,7 @@ backend:
           - path: /
             pathType: Prefix
     tls: []
-  
+
   env:
     DEBUG: "True"
     DJANGO_SECRET_KEY: "change-me-in-production"
@@ -40,9 +40,16 @@ backend:
     STRIPE_PUBLISHABLE_KEY: ""
     STRIPE_WEBHOOK_SECRET: ""
     ALLOWED_HOSTS: "*"
-  
+    # MinIO/S3 Storage Configuration
+    USE_S3_STORAGE: "True"
+    # MinIO service URL - will be set in deployment template
+    AWS_ACCESS_KEY_ID: "minioadmin"  # Should match storage.minio.auth.rootUser
+    AWS_SECRET_ACCESS_KEY: "minioadmin"  # Should match storage.minio.auth.rootPassword
+    AWS_STORAGE_BUCKET_NAME: "lendahand-media"
+    AWS_S3_USE_SSL: "False"
+
   envFrom: []
-  
+
 #  resources:
 #    limits:
 #      cpu: 1000m
@@ -50,21 +57,21 @@ backend:
 #    requests:
 #      cpu: 500m
 #      memory: 512Mi
-  
+
   livenessProbe:
     httpGet:
       path: /api/health/
       port: http
     initialDelaySeconds: 30
     periodSeconds: 10
-  
+
   readinessProbe:
     httpGet:
       path: /api/health/
       port: http
     initialDelaySeconds: 10
     periodSeconds: 5
-  
+
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -73,19 +80,19 @@ backend:
 frontend:
   enabled: true
   replicaCount: 1
-  
+
   image:
     repository: frontend
     tag: 98da23a27778a9c272e6d54b8ac87096659e440d
     pullPolicy: IfNotPresent
-  
+
   imagePullSecrets: []
-  
+
   service:
     type: ClusterIP
     port: 80
     annotations: {}
-  
+
   ingress:
     enabled: true
     className: "nginx"
@@ -96,12 +103,12 @@ frontend:
           - path: /
             pathType: Prefix
     tls: []
-  
+
   env:
     REACT_APP_API_URL: "http://api-test.lendahand.me"
-  
+
   envFrom: []
-  
+
   resources:
     limits:
       cpu: 500m
@@ -109,24 +116,72 @@ frontend:
     requests:
       cpu: 100m
       memory: 128Mi
-  
+
   livenessProbe:
     httpGet:
       path: /
       port: http
     initialDelaySeconds: 30
     periodSeconds: 10
-  
+
   readinessProbe:
     httpGet:
       path: /
       port: http
     initialDelaySeconds: 10
     periodSeconds: 5
-  
+
   nodeSelector: {}
   tolerations: []
   affinity: {}
+
+# Storage - MinIO (S3-compatible object storage)
+storage:
+  minio:
+    enabled: true
+    replicaCount: 1
+
+    image:
+      repository: minio/minio
+      tag: "latest"
+      pullPolicy: IfNotPresent
+
+    service:
+      type: ClusterIP
+      port: 9000
+      consolePort: 9001
+
+    auth:
+      rootUser: "minioadmin"
+      rootPassword: "minioadmin"  # Change in production!
+
+    persistence:
+      enabled: true
+      size: 10Gi
+      accessMode: ReadWriteOnce
+      storageClass: ""  # Use default storage class
+
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+    livenessProbe:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+
+    readinessProbe:
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 5
+
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
 
 ingress:
   enabled: true
@@ -135,4 +190,3 @@ ingress:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
   tls:
     enabled: true
-

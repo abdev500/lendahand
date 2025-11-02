@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  minio:
+    build: .
+    image: lendahand-minio:latest
+    container_name: lendahand-minio
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"   # S3 API endpoint
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"  # Web console
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      start_period: 40s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - default
+
+volumes:
+  minio_data:
+    driver: local
+
+networks:
+  default:
+    name: lendahand-storage

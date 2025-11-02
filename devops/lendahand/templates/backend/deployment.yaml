@@ -63,6 +63,20 @@ spec:
           value: {{ $value | quote }}
         {{- end }}
         {{- end }}
+        {{- if .Values.storage.minio.enabled }}
+        - name: AWS_S3_ENDPOINT_URL
+          value: "http://{{ include "lendahand.fullname" . }}-minio:9000"
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "lendahand.fullname" . }}-minio-secret
+              key: root-user
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "lendahand.fullname" . }}-minio-secret
+              key: root-password
+        {{- end }}
         {{- with .Values.backend.envFrom }}
         envFrom:
           {{- toYaml . | nindent 10 }}
@@ -86,4 +100,3 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
 {{- end }}
-
