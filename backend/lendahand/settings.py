@@ -169,7 +169,8 @@ if USE_S3_STORAGE:
 
     # Media URL configuration
     if AWS_S3_CUSTOM_DOMAIN:
-        MEDIA_URL = f'{"https" if AWS_S3_USE_SSL else "http"}://{AWS_S3_CUSTOM_DOMAIN}/'
+        # Include bucket name in path for MinIO S3 API compatibility
+        MEDIA_URL = f'{"https" if AWS_S3_USE_SSL else "http"}://{AWS_S3_CUSTOM_DOMAIN}/{AWS_STORAGE_BUCKET_NAME}/'
     else:
         # Use MinIO endpoint directly
         MEDIA_URL = f"{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/"
