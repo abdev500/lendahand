@@ -11,4 +11,6 @@ django-parler==2.3
 whitenoise==6.6.0
 gunicorn==21.2.0
 dj-database-url==2.1.0
-
+django-storages==1.14.2
+boto3==1.35.0
+requests>=2.31.0

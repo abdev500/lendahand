@@ -35,5 +35,6 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # Media files are served from MinIO (S3 storage), not locally
+    # Only serve static files locally
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

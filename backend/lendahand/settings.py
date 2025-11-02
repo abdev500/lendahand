@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.apple",
     "parler",
     "drf_yasg",
+    "storages",  # S3/MinIO storage backend
     # Local apps
     "donations",
 ]
@@ -138,9 +139,67 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# Media files
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+# Media files - MinIO (S3-compatible) storage or local fallback
+USE_S3_STORAGE = os.getenv("USE_S3_STORAGE", "False") == "True"
+
+# Check if we're running database setup operations (makemigrations, migrate, createsuperuser)
+# These operations don't need MinIO storage and should be allowed to run
+import sys
+IS_DB_SETUP = any(
+    cmd in sys.argv
+    for cmd in ["makemigrations", "migrate", "createsuperuser", "shell", "dbshell"]
+)
+
+if USE_S3_STORAGE:
+    # MinIO/S3 storage configuration
+    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "minioadmin")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "minioadmin")
+    AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "lendahand-media")
+    AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL", "http://localhost:9000")
+    AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", None)
+    AWS_S3_USE_SSL = os.getenv("AWS_S3_USE_SSL", "False") == "True"
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = "public-read"
+    AWS_S3_OBJECT_PARAMETERS = {
+        "CacheControl": "max-age=86400",  # Cache for 1 day
+    }
+
+    # Use S3 for media files
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+    # Media URL configuration
+    if AWS_S3_CUSTOM_DOMAIN:
+        MEDIA_URL = f'{"https" if AWS_S3_USE_SSL else "http"}://{AWS_S3_CUSTOM_DOMAIN}/'
+    else:
+        # Use MinIO endpoint directly
+        MEDIA_URL = f"{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/"
+else:
+    # Local file storage is disabled - require MinIO storage
+    # Exception: Allow during database setup operations
+    if not IS_DB_SETUP:
+        raise ValueError(
+            "ERROR: Local media storage is not allowed. MinIO storage must be enabled.\n"
+            "\n"
+            "To fix this:\n"
+            "1. Ensure Docker is running (MinIO requires Docker)\n"
+            "2. Set USE_S3_STORAGE=True environment variable\n"
+            "3. Set required MinIO environment variables:\n"
+            "   - AWS_S3_ENDPOINT_URL (default: http://localhost:9000)\n"
+            "   - AWS_ACCESS_KEY_ID (default: minioadmin)\n"
+            "   - AWS_SECRET_ACCESS_KEY (default: minioadmin)\n"
+            "   - AWS_STORAGE_BUCKET_NAME (default: lendahand-media)\n"
+            "\n"
+            "If using start-dev.sh, ensure MinIO container is running:\n"
+            "  - Docker Desktop must be started\n"
+            "  - MinIO container should be running (check with: docker ps)\n"
+            "\n"
+            "Current environment:\n"
+            f"  USE_S3_STORAGE={os.getenv('USE_S3_STORAGE', 'not set')}\n"
+            f"  AWS_S3_ENDPOINT_URL={os.getenv('AWS_S3_ENDPOINT_URL', 'not set')}\n"
+        )
+    else:
+        # Allow during database setup operations (no media storage needed)
+        MEDIA_URL = f"{os.getenv('AWS_S3_ENDPOINT_URL', 'http://localhost:9000')}/{os.getenv('AWS_STORAGE_BUCKET_NAME', 'lendahand-media')}/"
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

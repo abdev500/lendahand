@@ -14,7 +14,7 @@ services:
 
   web:
     build: .
-    command: bash -c "python manage.py migrate && python manage.py seed_data && gunicorn --bind 0.0.0.0:8000 --workers 3 lendahand.wsgi:application"
+    command: bash -c "python manage.py migrate && gunicorn --bind 0.0.0.0:8000 --workers 3 lendahand.wsgi:application"
     volumes:
       - ./backend:/app
       - static_volume:/app/staticfiles
@@ -34,4 +34,4 @@ volumes:
   postgres_data:
   static_volume:
   media_volume:
-
+  minio_data:
