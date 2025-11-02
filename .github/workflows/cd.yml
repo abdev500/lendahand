@@ -54,7 +54,7 @@ jobs:
 
       - name: 'Build and push Docker container frontend'
         run: |-
-          DOCKER_TAG="${GAR_LOCATION}-docker.pkg.dev/${K8_PROJECT_ID}/${K8_REPOSITORY}/frontend:${GITHUB_SHA}"
+          DOCKER_TAG="${K8_GAR_LOCATION}-docker.pkg.dev/${K8_PROJECT_ID}/${K8_REPOSITORY}/frontend:${GITHUB_SHA}"
           docker build \
             --tag "${DOCKER_TAG}" \
             --build-arg GITHUB_SHA="${GITHUB_SHA}" \
