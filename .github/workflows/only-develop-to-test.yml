@@ -1,0 +1,21 @@
+name: Only allow PRs from develop to test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [test]
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR source branch
+        run: |
+          echo "Base branch: ${{ github.base_ref }}"
+          echo "Head branch: ${{ github.head_ref }}"
+          if [ "${{ github.head_ref }}" != "develop" ]; then
+            echo "❌ Only PRs from 'develop' into 'test' are allowed."
+            exit 1
+          fi
+          echo "✅ Valid PR from 'develop' → 'test'"
+
