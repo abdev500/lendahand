@@ -13,4 +13,9 @@ jobs:
     with:
       environment: development
     secrets: inherit
+  call:
+    uses: ./.github/workflows/cd.yml
+    with:
+      environment: development
+    secrets: inherit
 
