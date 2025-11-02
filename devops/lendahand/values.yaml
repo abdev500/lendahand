@@ -1,4 +1,3 @@
-# Default values for lendahand
 global:
   imageRegistry: "us-central1-docker.pkg.dev/test-donate-472114/donatereg/"
   imagePullSecrets: []
@@ -26,11 +25,10 @@ backend:
     className: "nginx"
     annotations: {}
     hosts:
-      - host: api-test.lendahand.me
-        paths:
-          - path: /
-            pathType: Prefix
-    tls: []
+      - host: api-test.lend-a-hand.me
+        # paths defaults to [ { path: "/", pathType: "Prefix" } ] if not specified
+    tls: true  # Enable TLS with cert-manager (uses letsencrypt-prod by default)
+    tlsClusterIssuer: "letsencrypt-prod"  # Optional: override default ClusterIssuer
 
   env:
     DEBUG: "True"
@@ -39,7 +37,7 @@ backend:
     STRIPE_SECRET_KEY: ""
     STRIPE_PUBLISHABLE_KEY: ""
     STRIPE_WEBHOOK_SECRET: ""
-    FRONTEND_URL: "http://test.lendahand.me"  # Frontend URL for Stripe redirects
+    FRONTEND_URL: "http://test.lend-a-hand.me"  # Frontend URL for Stripe redirects
     ALLOWED_HOSTS: "*"
     # MinIO/S3 Storage Configuration
     # MinIO is managed by the infra chart - service name: infra-minio
@@ -84,14 +82,13 @@ frontend:
     className: "nginx"
     annotations: {}
     hosts:
-      - host: test.lendahand.me
-        paths:
-          - path: /
-            pathType: Prefix
-    tls: []
+      - host: test.lend-a-hand.me
+        # paths defaults to [ { path: "/", pathType: "Prefix" } ] if not specified
+    tls: true  # Enable TLS with cert-manager (set to true to enable)
+    tlsClusterIssuer: "letsencrypt-prod"  # Optional: override default ClusterIssuer
 
   env:
-    REACT_APP_API_URL: "http://api-test.lendahand.me/api"
+    REACT_APP_API_URL: "http://api-test.lend-a-hand.me/api"
 
   envFrom: []
 

@@ -4,12 +4,14 @@
 {{- if and .Values.storage.minio.ingress.className (not (hasPrefix "nginx" .Values.storage.minio.ingress.className)) }}
 {{- fail "Only nginx ingress controller is supported" }}
 {{- end }}
-{{- $index := 0 }}
+{{- $tlsEnabled := .Values.storage.minio.ingress.tls | default false }}
+{{- $clusterIssuer := .Values.storage.minio.ingress.tlsClusterIssuer | default "letsencrypt-prod" }}
 {{- range $i, $hostConfig := .Values.storage.minio.ingress.hosts }}
 {{- $host := $hostConfig.host | default "" }}
 {{- if and $host (or $hostConfig.paths (eq $i 0)) }}
 {{- $paths := $hostConfig.paths | default (list (dict "path" "/" "pathType" "Prefix")) }}
 {{- if $paths }}
+{{- $secretName := printf "%s-tls" ($host | replace "." "-" | replace "_" "-" | lower) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -24,19 +26,18 @@ metadata:
     {{- with $.Values.storage.minio.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
+    {{- if $tlsEnabled }}
+    cert-manager.io/cluster-issuer: {{ $clusterIssuer | quote }}
+    {{- end }}
 spec:
   {{- if $.Values.storage.minio.ingress.className }}
   ingressClassName: {{ $.Values.storage.minio.ingress.className }}
   {{- end }}
-  {{- if $.Values.storage.minio.ingress.tls }}
+  {{- if $tlsEnabled }}
   tls:
-    {{- range $.Values.storage.minio.ingress.tls }}
     - hosts:
-        {{- range .hosts }}
-        - {{ . | quote }}
-        {{- end }}
-      secretName: {{ .secretName }}
-    {{- end }}
+        - {{ $host | quote }}
+      secretName: {{ $secretName | quote }}
   {{- end }}
   rules:
     - host: {{ $host | quote }}
