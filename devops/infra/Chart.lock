@@ -2,8 +2,5 @@ dependencies:
 - name: postgresql
   repository: https://charts.bitnami.com/bitnami
   version: 15.5.25
-- name: ingress-nginx
-  repository: https://kubernetes.github.io/ingress-nginx
-  version: 4.13.2
-digest: sha256:bd1ac4419e461825e40fafa5a7780ba995e5bd19d4dce37404f3d6a13a54ccc9
-generated: "2025-11-02T11:59:04.391261+02:00"
+digest: sha256:1ff7882b1184bfe71d9f407dfd66888722aaf133ec55a1fed55e779d19db2cce
+generated: "2025-11-02T18:23:54.35607+02:00"

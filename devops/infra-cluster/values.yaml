@@ -1,0 +1,16 @@
+# Cluster-scoped infrastructure components
+# This chart should be installed once per cluster (typically in kube-system or default namespace)
+
+ingress-nginx:
+  enabled: true
+  controller:
+    service:
+      externalTrafficPolicy: Local
+      enableHttp: true
+      enableHttps: true
+      type: LoadBalancer
+      loadBalancerIP: 35.223.46.33
+      # annotations:
+      #   nginx.ingress.kubernetes.io/enable-cors: "true"
+      ports:
+        https: 443

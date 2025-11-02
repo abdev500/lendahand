@@ -1,9 +1,0 @@
-postgresql:
-  auth:
-    username: postgres
-    database: getdonate
-    password: postgres   # use a secret for prod
-ingress-nginx:
-  controller:
-    service:
-      loadBalancerIP: 35.223.46.33

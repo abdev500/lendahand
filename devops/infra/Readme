@@ -1,9 +1,44 @@
+# Infra Helm Chart
 
-andrei@AndreiMB64GB devops % helm upgrade --install cert-manager jetstack/cert-manager \
-  --namespace cert-manager \
-  --create-namespace \
-  --set installCRDs=true                                                         
-Release "cert-manager" does not exist. Installing it now.
+Namespace-scoped infrastructure components (PostgreSQL, MinIO).
 
-kubectl create namespace cert-manager
+## Installation
 
+Install this chart in your desired namespace (e.g., `default`, `develop`, `production`):
+
+```bash
+helm upgrade --install infra devops/infra -n <namespace>
+```
+
+**Note**: The ingress-nginx controller has been moved to the `infra-cluster` chart and should be installed separately once per cluster.
+
+## Components
+
+- **PostgreSQL**: Database for the application
+- **MinIO**: S3-compatible object storage for media files
+
+## Dependencies
+
+This chart depends on:
+- `postgresql` (Bitnami chart)
+
+The ingress-nginx controller is now managed by the `infra-cluster` chart.
+
+## Usage in Multiple Namespaces
+
+This chart can be installed in multiple namespaces (e.g., `default`, `develop`, `staging`, `production`). Each namespace gets its own PostgreSQL and MinIO instances.
+
+## Configuration
+
+Edit `values.yaml` to customize:
+- PostgreSQL settings (database name, credentials, persistence)
+- MinIO settings (storage size, ingress hosts, credentials)
+
+## Updating Dependencies
+
+To update the PostgreSQL dependency:
+
+```bash
+cd devops/infra
+helm dependency update
+```
