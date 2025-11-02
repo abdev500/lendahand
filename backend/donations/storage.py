@@ -21,6 +21,12 @@ class MinIOStorage(S3Boto3Storage):
     def url(self, name):
         """
         Override URL generation to include bucket name when using custom domain.
+
+        When AWS_S3_CUSTOM_DOMAIN is set, django-storages generates URLs like:
+        http://custom-domain/path/to/file.jpg
+
+        But MinIO with path-based bucket addressing needs:
+        http://custom-domain/bucket-name/path/to/file.jpg
         """
         # Get the base URL from parent class
         url = super().url(name)
@@ -34,13 +40,15 @@ class MinIOStorage(S3Boto3Storage):
             from urllib.parse import urlparse, urlunparse
             parsed = urlparse(url)
 
-            # Check if bucket name is already in the path
-            path_parts = parsed.path.lstrip('/').split('/', 1)
-            if path_parts[0] != bucket_name:
-                # Bucket name is missing, add it to the path
-                # For path-based addressing: /bucket-name/path/to/file
-                new_path = f"/{bucket_name}{parsed.path}" if parsed.path.startswith('/') else f"/{bucket_name}/{parsed.path}"
-                parsed = parsed._replace(path=new_path)
-                url = urlunparse(parsed)
+            # Only process if the host matches our custom domain
+            if parsed.netloc == custom_domain or parsed.netloc == custom_domain.split(':')[0]:
+                # Check if bucket name is already in the path
+                path_parts = parsed.path.lstrip('/').split('/', 1)
+                if len(path_parts) > 0 and path_parts[0] != bucket_name:
+                    # Bucket name is missing, add it to the path
+                    # For path-based addressing: /bucket-name/path/to/file
+                    new_path = f"/{bucket_name}{parsed.path}" if parsed.path.startswith('/') else f"/{bucket_name}/{parsed.path}"
+                    parsed = parsed._replace(path=new_path)
+                    url = urlunparse(parsed)
 
         return url
