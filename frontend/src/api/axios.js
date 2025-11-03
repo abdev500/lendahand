@@ -82,14 +82,8 @@ api.interceptors.request.use(
       // HTTP headers are case-insensitive, but use standard capitalization
       const authHeader = `Token ${token}`
 
-      // Set header multiple ways to ensure it's sent
+      // Set Authorization header directly (don't use config.headers.common - it causes CORS issues)
       config.headers['Authorization'] = authHeader
-      config.headers['authorization'] = authHeader
-      // Also set on the config directly
-      if (!config.headers.common) {
-        config.headers.common = {}
-      }
-      config.headers.common['Authorization'] = authHeader
 
       // Debug logging for token presence
       console.log('[API Request]', {
@@ -101,10 +95,7 @@ api.interceptors.request.use(
         tokenLength: token ? token.length : 0,
         tokenPrefix: token ? token.substring(0, 10) + '...' : 'none',
         authorizationHeader: authHeader.substring(0, 20) + '...',
-        headersSet: {
-          Authorization: config.headers['Authorization']?.substring(0, 20) + '...',
-          authorization: config.headers['authorization']?.substring(0, 20) + '...'
-        }
+        headerSet: config.headers['Authorization'] ? config.headers['Authorization'].substring(0, 20) + '...' : 'not set'
       })
     } else {
       // Log when token is missing - this helps debug authentication issues
