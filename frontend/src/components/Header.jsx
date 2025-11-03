@@ -13,7 +13,11 @@ function Header() {
   const dropdownRef = useRef(null)
 
   useEffect(() => {
-    checkAuth()
+    // Small delay to ensure token is stored after login navigation
+    const timer = setTimeout(() => {
+      checkAuth()
+    }, 100)
+    return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -34,14 +38,28 @@ function Header() {
   }, [dropdownOpen])
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('token')
+    let token = null
+    try {
+      token = localStorage.getItem('token')
+    } catch (e) {
+      console.error('[Header] Error accessing localStorage:', e)
+      return
+    }
+
     if (token) {
       try {
+        console.log('[Header] Fetching user data with token:', token.substring(0, 10) + '...')
         const response = await api.get('/users/me/')
         setUser(response.data)
         setIsAuthenticated(true)
       } catch (error) {
-        localStorage.removeItem('token')
+        console.error('[Header] Error fetching user data:', error)
+        // Don't clear token immediately - might be a transient error
+        // Only clear if it's definitely a 401 (unauthorized)
+        if (error.response && error.response.status === 401) {
+          console.warn('[Header] 401 error - clearing token')
+          localStorage.removeItem('token')
+        }
         setIsAuthenticated(false)
       }
     }
@@ -166,4 +184,3 @@ function Header() {
 }
 
 export default Header
-

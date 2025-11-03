@@ -23,9 +23,21 @@ function Login() {
         password,
       })
 
-      localStorage.setItem('token', response.data.token)
-      // Navigate without reload - React Router will handle the navigation
-      navigate('/dashboard')
+      if (response.data.token) {
+        // Store token before navigation to ensure it's available
+        const token = response.data.token
+        localStorage.setItem('token', token)
+        console.log('[Login] Token stored in localStorage:', token.substring(0, 10) + '...')
+        console.log('[Login] Verifying token was stored:', localStorage.getItem('token')?.substring(0, 10) + '...')
+
+        // Wait a tiny bit to ensure localStorage write completes
+        await new Promise(resolve => setTimeout(resolve, 50))
+
+        // Navigate without reload - React Router will handle the navigation
+        navigate('/dashboard')
+      } else {
+        throw new Error('No token received from server')
+      }
     } catch (err) {
       let errorMsg = t('login.error', 'Login failed. Please try again.')
 
