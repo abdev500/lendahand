@@ -25,13 +25,39 @@ function Login() {
 
       if (response.data.token) {
         // Store token before navigation to ensure it's available
-        const token = response.data.token
-        localStorage.setItem('token', token)
-        console.log('[Login] Token stored in localStorage:', token.substring(0, 10) + '...')
-        console.log('[Login] Verifying token was stored:', localStorage.getItem('token')?.substring(0, 10) + '...')
+        const token = response.data.token.toString().trim()
+
+        // Verify token is valid (not empty, reasonable length)
+        if (!token || token.length < 10) {
+          throw new Error('Invalid token received from server')
+        }
+
+        // Store in localStorage
+        try {
+          localStorage.setItem('token', token)
+          console.log('[Login] Token stored in localStorage:', {
+            length: token.length,
+            prefix: token.substring(0, 10) + '...',
+            suffix: '...' + token.substring(token.length - 5)
+          })
+
+          // Verify immediately
+          const storedToken = localStorage.getItem('token')
+          if (storedToken !== token) {
+            console.error('[Login] Token mismatch after storage!', {
+              original: token.substring(0, 10) + '...',
+              stored: storedToken ? storedToken.substring(0, 10) + '...' : 'null'
+            })
+            throw new Error('Token storage verification failed')
+          }
+          console.log('[Login] Token verified in localStorage:', storedToken.substring(0, 10) + '...')
+        } catch (e) {
+          console.error('[Login] Error storing token:', e)
+          throw new Error('Failed to store authentication token')
+        }
 
         // Wait a tiny bit to ensure localStorage write completes
-        await new Promise(resolve => setTimeout(resolve, 50))
+        await new Promise(resolve => setTimeout(resolve, 100))
 
         // Navigate without reload - React Router will handle the navigation
         navigate('/dashboard')

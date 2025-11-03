@@ -50,8 +50,17 @@ api.interceptors.request.use(
   (config) => {
     // Ensure baseURL is updated before each request (in case config loaded late)
     const currentBaseURL = getApiBaseURL()
-    if (config.baseURL !== currentBaseURL) {
+    // Use config.baseURL if set, otherwise use instance default, otherwise use computed
+    if (!config.baseURL) {
       config.baseURL = currentBaseURL
+    } else if (config.baseURL !== currentBaseURL && currentBaseURL.startsWith('http')) {
+      // Only override if computed URL is absolute (from config.js) and different
+      config.baseURL = currentBaseURL
+    }
+
+    // Ensure headers object exists
+    if (!config.headers) {
+      config.headers = {}
     }
 
     // Get token from localStorage
@@ -61,6 +70,8 @@ api.interceptors.request.use(
       if (token) {
         // Trim any whitespace that might have been accidentally added
         token = token.trim()
+        // Remove any quotes that might have been added accidentally
+        token = token.replace(/^["']|["']$/g, '')
       }
     } catch (e) {
       console.error('[API] Error accessing localStorage:', e)
@@ -70,26 +81,40 @@ api.interceptors.request.use(
       // Set Authorization header - must be exactly "Token <token>" for DRF TokenAuthentication
       // HTTP headers are case-insensitive, but use standard capitalization
       const authHeader = `Token ${token}`
+
+      // Set header multiple ways to ensure it's sent
       config.headers['Authorization'] = authHeader
+      config.headers['authorization'] = authHeader
+      // Also set on the config directly
+      if (!config.headers.common) {
+        config.headers.common = {}
+      }
+      config.headers.common['Authorization'] = authHeader
 
       // Debug logging for token presence
       console.log('[API Request]', {
         method: config.method?.toUpperCase(),
         url: config.url,
-        baseURL: config.baseURL,
-        fullURL: config.baseURL + config.url,
+        baseURL: config.baseURL || api.defaults.baseURL,
+        fullURL: (config.baseURL || api.defaults.baseURL || '') + (config.url || ''),
         hasToken: !!token,
+        tokenLength: token ? token.length : 0,
         tokenPrefix: token ? token.substring(0, 10) + '...' : 'none',
-        authorizationHeader: authHeader.substring(0, 15) + '...'
+        authorizationHeader: authHeader.substring(0, 20) + '...',
+        headersSet: {
+          Authorization: config.headers['Authorization']?.substring(0, 20) + '...',
+          authorization: config.headers['authorization']?.substring(0, 20) + '...'
+        }
       })
     } else {
       // Log when token is missing - this helps debug authentication issues
       console.warn('[API Request] No token in localStorage', {
         method: config.method?.toUpperCase(),
         url: config.url,
-        baseURL: config.baseURL,
-        fullURL: config.baseURL + config.url,
-        localStorageAvailable: typeof localStorage !== 'undefined'
+        baseURL: config.baseURL || api.defaults.baseURL,
+        fullURL: (config.baseURL || api.defaults.baseURL || '') + (config.url || ''),
+        localStorageAvailable: typeof localStorage !== 'undefined',
+        allKeys: typeof localStorage !== 'undefined' ? Object.keys(localStorage) : []
       })
     }
 
