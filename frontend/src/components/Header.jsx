@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState, useRef } from 'react'
 import api from '../api/axios'
@@ -7,18 +7,17 @@ import './Header.css'
 function Header() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const [user, setUser] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
 
   useEffect(() => {
-    // Small delay to ensure token is stored after login navigation
-    const timer = setTimeout(() => {
-      checkAuth()
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [])
+    // Check auth on mount and when route changes
+    // This ensures the header updates after login navigation
+    checkAuth()
+  }, [location.pathname])
 
   useEffect(() => {
     // Close dropdown when clicking outside
@@ -43,6 +42,8 @@ function Header() {
       token = localStorage.getItem('token')
     } catch (e) {
       console.error('[Header] Error accessing localStorage:', e)
+      setIsAuthenticated(false)
+      setUser(null)
       return
     }
 
@@ -52,6 +53,7 @@ function Header() {
         const response = await api.get('/users/me/')
         setUser(response.data)
         setIsAuthenticated(true)
+        console.log('[Header] User authenticated:', response.data.email)
       } catch (error) {
         console.error('[Header] Error fetching user data:', error)
         // Don't clear token immediately - might be a transient error
@@ -59,9 +61,18 @@ function Header() {
         if (error.response && error.response.status === 401) {
           console.warn('[Header] 401 error - clearing token')
           localStorage.removeItem('token')
+          setIsAuthenticated(false)
+          setUser(null)
+        } else {
+          // For other errors, still mark as not authenticated but keep token
+          setIsAuthenticated(false)
+          setUser(null)
         }
-        setIsAuthenticated(false)
       }
+    } else {
+      // No token - definitely not authenticated
+      setIsAuthenticated(false)
+      setUser(null)
     }
   }
 
