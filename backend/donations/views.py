@@ -88,7 +88,39 @@ def login_view(request):
         # Only create/get token, don't use session login for API
         token, created = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "user": UserSerializer(user).data})
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # Return a more consistent error format
+    errors = serializer.errors
+    error_msg = None
+
+    # Check for error field
+    if "error" in errors:
+        error_data = errors["error"]
+        if isinstance(error_data, list) and len(error_data) > 0:
+            error_msg = str(error_data[0])
+        else:
+            error_msg = str(error_data)
+
+    # Check for non_field_errors
+    if not error_msg and "non_field_errors" in errors:
+        non_field_errors = errors["non_field_errors"]
+        if isinstance(non_field_errors, list) and len(non_field_errors) > 0:
+            error_msg = str(non_field_errors[0])
+
+    # Fallback: get first error from any field
+    if not error_msg:
+        for field, field_errors in errors.items():
+            if isinstance(field_errors, list) and len(field_errors) > 0:
+                error_msg = str(field_errors[0])
+                break
+            elif field_errors:
+                error_msg = str(field_errors)
+                break
+
+    # Final fallback
+    if not error_msg:
+        error_msg = "Invalid credentials"
+
+    return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["POST"])
