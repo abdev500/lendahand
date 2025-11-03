@@ -17,23 +17,103 @@ const getApiBaseURL = () => {
 }
 
 const api = axios.create({
-  baseURL: getApiBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
+// Set baseURL dynamically to handle runtime config loading
+api.defaults.baseURL = getApiBaseURL()
+
+// Update baseURL if runtime config loads later (for cases where config.js loads async)
+if (typeof window !== 'undefined') {
+  const updateBaseURL = () => {
+    const newBaseURL = getApiBaseURL()
+    if (api.defaults.baseURL !== newBaseURL) {
+      api.defaults.baseURL = newBaseURL
+    }
+  }
+
+  // Try to update immediately
+  updateBaseURL()
+
+  // Also listen for config to be available (if it loads after this script)
+  if (!window.__RUNTIME_CONFIG__) {
+    // Wait a bit for config.js to load
+    setTimeout(updateBaseURL, 100)
+    setTimeout(updateBaseURL, 500)
+  }
+}
+
 // Add token to requests if available
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Token ${token}`
+    // Ensure baseURL is updated before each request (in case config loaded late)
+    const currentBaseURL = getApiBaseURL()
+    // Use config.baseURL if set, otherwise use instance default, otherwise use computed
+    if (!config.baseURL) {
+      config.baseURL = currentBaseURL
+    } else if (config.baseURL !== currentBaseURL && currentBaseURL.startsWith('http')) {
+      // Only override if computed URL is absolute (from config.js) and different
+      config.baseURL = currentBaseURL
     }
+
+    // Ensure headers object exists
+    if (!config.headers) {
+      config.headers = {}
+    }
+
+    // Get token from localStorage
+    let token = null
+    try {
+      token = localStorage.getItem('token')
+      if (token) {
+        // Trim any whitespace that might have been accidentally added
+        token = token.trim()
+        // Remove any quotes that might have been added accidentally
+        token = token.replace(/^["']|["']$/g, '')
+      }
+    } catch (e) {
+      console.error('[API] Error accessing localStorage:', e)
+    }
+
+    if (token) {
+      // Set Authorization header - must be exactly "Token <token>" for DRF TokenAuthentication
+      // HTTP headers are case-insensitive, but use standard capitalization
+      const authHeader = `Token ${token}`
+
+      // Set Authorization header directly (don't use config.headers.common - it causes CORS issues)
+      config.headers['Authorization'] = authHeader
+
+      // Debug logging for token presence
+      console.log('[API Request]', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        baseURL: config.baseURL || api.defaults.baseURL,
+        fullURL: (config.baseURL || api.defaults.baseURL || '') + (config.url || ''),
+        hasToken: !!token,
+        tokenLength: token ? token.length : 0,
+        tokenPrefix: token ? token.substring(0, 10) + '...' : 'none',
+        authorizationHeader: authHeader.substring(0, 20) + '...',
+        headerSet: config.headers['Authorization'] ? config.headers['Authorization'].substring(0, 20) + '...' : 'not set'
+      })
+    } else {
+      // Log when token is missing - this helps debug authentication issues
+      console.warn('[API Request] No token in localStorage', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        baseURL: config.baseURL || api.defaults.baseURL,
+        fullURL: (config.baseURL || api.defaults.baseURL || '') + (config.url || ''),
+        localStorageAvailable: typeof localStorage !== 'undefined',
+        allKeys: typeof localStorage !== 'undefined' ? Object.keys(localStorage) : []
+      })
+    }
+
     // Don't set Content-Type for FormData - let browser set it with boundary
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type']
     }
+
     return config
   },
   (error) => {
@@ -45,6 +125,32 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Log error details for debugging
+    console.error('[API Error]', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      headers: error.response?.headers,
+      requestHeaders: error.config?.headers
+    })
+
+    // Handle 401 Unauthorized - clear token and redirect to login
+    if (error.response && error.response.status === 401) {
+      console.warn('[API] 401 Unauthorized - clearing token')
+      const tokenBefore = localStorage.getItem('token')
+      console.log('[API] Token before clearing:', tokenBefore ? tokenBefore.substring(0, 10) + '...' : 'none')
+
+      localStorage.removeItem('token')
+
+      // Only redirect if not already on login page
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+        console.log('[API] Redirecting to login page')
+        window.location.href = '/login'
+      }
+    }
+
     // If we get HTML instead of JSON, try to extract error message
     if (error.response && typeof error.response.data === 'string' && error.response.data.trim().startsWith('<!')) {
       // It's HTML, likely an error page

@@ -234,6 +234,11 @@ CORS_ALLOWED_ORIGINS = (
         "http://127.0.0.1:5173",
         "http://test.lendahand.me",
         "https://test.lendahand.me",
+        "http://test.lend-a-hand.me",
+        "https://test.lend-a-hand.me",
+        "http://dev.lend-a-hand.me",
+        "https://dev.lend-a-hand.me",
+        "https://lend-a-hand.me",
     ]
 )
 CORS_ALLOW_CREDENTIALS = True
@@ -245,6 +250,21 @@ CORS_ALLOW_METHODS = [
     "PATCH",
     "POST",
     "PUT",
+]
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+CORS_EXPOSE_HEADERS = [
+    "authorization",
+    "content-type",
 ]
 
 # Django Allauth

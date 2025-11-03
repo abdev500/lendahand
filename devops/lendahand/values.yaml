@@ -37,7 +37,7 @@ backend:
     STRIPE_SECRET_KEY: ""
     STRIPE_PUBLISHABLE_KEY: ""
     STRIPE_WEBHOOK_SECRET: ""
-    FRONTEND_URL: "http://test.lend-a-hand.me"  # Frontend URL for Stripe redirects
+    FRONTEND_URL: "https://test.lend-a-hand.me"  # Frontend URL for Stripe redirects
     ALLOWED_HOSTS: "*"
     # MinIO/S3 Storage Configuration
     # MinIO is managed by the infra chart - service name: infra-minio
@@ -88,7 +88,7 @@ frontend:
     tlsClusterIssuer: "letsencrypt-prod"  # Optional: override default ClusterIssuer
 
   env:
-    REACT_APP_API_URL: "http://api-test.lend-a-hand.me/api"
+    REACT_APP_API_URL: "https://api-test.lend-a-hand.me/api"
 
   envFrom: []
 

@@ -1,0 +1,20 @@
+name: Only allow PRs from test to main
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if PR source is not 'test'
+        run: |
+          echo "Base branch: ${{ github.base_ref }}"
+          echo "Head branch: ${{ github.head_ref }}"
+          if [ "${{ github.head_ref }}" != "test" ]; then
+            echo "Only PRs from 'test' into 'main' are allowed."
+            exit 1
+          fi
+

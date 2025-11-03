@@ -53,12 +53,12 @@ class LoginSerializer(serializers.Serializer):
         if email and password:
             user = authenticate(request=self.context.get("request"), username=email, password=password)
             if not user:
-                raise serializers.ValidationError("Invalid credentials")
+                raise serializers.ValidationError({"error": "Invalid credentials"})
             if not user.is_active:
-                raise serializers.ValidationError("User account is disabled")
+                raise serializers.ValidationError({"error": "User account is disabled"})
             attrs["user"] = user
         else:
-            raise serializers.ValidationError("Must include email and password")
+            raise serializers.ValidationError({"error": "Must include email and password"})
         return attrs
 
 
