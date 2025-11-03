@@ -17,15 +17,43 @@ const getApiBaseURL = () => {
 }
 
 const api = axios.create({
-  baseURL: getApiBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
+// Set baseURL dynamically to handle runtime config loading
+api.defaults.baseURL = getApiBaseURL()
+
+// Update baseURL if runtime config loads later (for cases where config.js loads async)
+if (typeof window !== 'undefined') {
+  const updateBaseURL = () => {
+    const newBaseURL = getApiBaseURL()
+    if (api.defaults.baseURL !== newBaseURL) {
+      api.defaults.baseURL = newBaseURL
+    }
+  }
+
+  // Try to update immediately
+  updateBaseURL()
+
+  // Also listen for config to be available (if it loads after this script)
+  if (!window.__RUNTIME_CONFIG__) {
+    // Wait a bit for config.js to load
+    setTimeout(updateBaseURL, 100)
+    setTimeout(updateBaseURL, 500)
+  }
+}
+
 // Add token to requests if available
 api.interceptors.request.use(
   (config) => {
+    // Ensure baseURL is updated before each request (in case config loaded late)
+    const currentBaseURL = getApiBaseURL()
+    if (config.baseURL !== currentBaseURL) {
+      config.baseURL = currentBaseURL
+    }
+
     const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Token ${token}`

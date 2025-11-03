@@ -24,8 +24,8 @@ function Login() {
       })
 
       localStorage.setItem('token', response.data.token)
+      // Navigate without reload - React Router will handle the navigation
       navigate('/dashboard')
-      window.location.reload()
     } catch (err) {
       let errorMsg = t('login.error', 'Login failed. Please try again.')
 
