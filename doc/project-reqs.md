@@ -1,9 +1,10 @@
 # Donation Platform – Requirements Document (Updated v2.3)
 
 ## 1. Overview
-A web platform for collecting donations.  
-Users create campaigns, go through moderation, and accept payments via Stripe.  
-The goal is simplicity, transparency, and trust for donors.  
+A web platform for collecting donations.
+Users create campaigns, go through moderation, and accept payments via Stripe.
+Each campaign owner maintains their own Stripe Connect Express account; campaigns remain blocked until onboarding is complete.
+The goal is simplicity, transparency, and trust for donors.
 The platform is called **lend-a-hand.me** and all branding shall be done using this name.
 
 ---
@@ -48,6 +49,7 @@ The platform is called **lend-a-hand.me** and all branding shall be done using t
 
 ### 2.3 Donations
 - Payments via **Stripe Checkout**.
+- Funds are transferred directly to the campaign owner's connected Stripe Express account (no platform fee).
 - Donors:
   - Enter amount.
   - Redirected to Stripe.
@@ -128,13 +130,13 @@ The platform is called **lend-a-hand.me** and all branding shall be done using t
 - Language switcher in top menu.
 
 
-### 2.10 Backend rest API 
+### 2.10 Backend rest API
 - Shall support following:
   - user login/logout, authorization for the other endpoints
   - user registration/password management
   - complete api to implement a full UI in react or mobile
 
-### 2.11 React frontend 
+### 2.11 React frontend
 - Shall support following:
   - main site with all ui features listed in this document, except django administration
 ---
@@ -181,7 +183,7 @@ The platform is called **lend-a-hand.me** and all branding shall be done using t
   - Dockerfile (Django with Gunicorn + Whitenoise).
   - docker-compose (Django + Postgres).
   - React built via `vite build` → artifacts served by Django/Whitenoise.
-  - Env vars: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `DJANGO_SECRET_KEY`, `DATABASE_URL`.
+  - Env vars: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_CLIENT_ID`, `STRIPE_ONBOARDING_RETURN_URL`, `STRIPE_ONBOARDING_REFRESH_URL`, `DJANGO_SECRET_KEY`, `DATABASE_URL`.
 
 ---
 

@@ -285,6 +285,13 @@ STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
 # Frontend URL for redirects (Stripe Checkout success/cancel URLs)
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+STRIPE_CLIENT_ID = os.getenv("STRIPE_CLIENT_ID", "")
+STRIPE_ONBOARDING_RETURN_URL = os.getenv(
+    "STRIPE_ONBOARDING_RETURN_URL", f"{FRONTEND_URL}/dashboard?stripe_onboarding=complete"
+)
+STRIPE_ONBOARDING_REFRESH_URL = os.getenv(
+    "STRIPE_ONBOARDING_REFRESH_URL", f"{FRONTEND_URL}/dashboard?stripe_onboarding=refresh"
+)
 
 # Parler (Localization)
 PARLER_LANGUAGES = {

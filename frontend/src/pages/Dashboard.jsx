@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../api/axios'
@@ -11,10 +11,13 @@ function Dashboard() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [campaigns, setCampaigns] = useState([])
+  const [moderationCampaigns, setModerationCampaigns] = useState([])
   const [news, setNews] = useState([])
   const [pendingCampaigns, setPendingCampaigns] = useState([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
+  const [stripeStatus, setStripeStatus] = useState(null)
+  const [stripeLoading, setStripeLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [activeTab, setActiveTab] = useState('campaigns')
@@ -43,6 +46,7 @@ function Dashboard() {
       }
 
       await fetchCampaigns()
+      await fetchStripeStatus()
 
       // Fetch news and pending campaigns if user is moderator/staff
       if (currentUser && (currentUser.is_moderator || currentUser.is_staff)) {
@@ -75,6 +79,9 @@ function Dashboard() {
       const newsCreated = searchParams.get('news_created') === 'true'
       const newsUpdated = searchParams.get('news_updated') === 'true'
       const moderationTab = searchParams.get('tab') === 'moderation'
+      const stripePending = searchParams.get('stripe_pending') === 'true'
+      const stripeError = searchParams.get('stripe_error') === 'true'
+      let shouldClearParams = false
 
       if (moderationTab && (currentUser?.is_moderator || currentUser?.is_staff)) {
         setActiveTab('moderation')
@@ -86,8 +93,7 @@ function Dashboard() {
         } else if (campaignUpdated) {
           setSuccessMessage(t('dashboard.updatedSuccess'))
         }
-        // Clear the URL params
-        setSearchParams({})
+        shouldClearParams = true
         // Refresh campaigns to show new/updated campaign
         setTimeout(() => {
           fetchCampaigns()
@@ -100,8 +106,7 @@ function Dashboard() {
         } else if (newsUpdated) {
           setSuccessMessage(t('news.updatedSuccess', 'News article updated successfully!'))
         }
-        // Clear the URL params
-        setSearchParams({})
+        shouldClearParams = true
         // Refresh news if user is moderator
         if (currentUser && (currentUser.is_moderator || currentUser.is_staff)) {
           setTimeout(() => {
@@ -109,11 +114,53 @@ function Dashboard() {
           }, 500)
         }
       }
+
+      if (stripePending) {
+        setErrorMessage(
+          t('dashboard.stripePendingNotice', 'Finish Stripe onboarding to enable moderation and donations for your campaign.')
+        )
+        shouldClearParams = true
+      }
+
+      if (stripeError) {
+        setErrorMessage(
+          t('dashboard.stripeErrorNotice', 'We could not start Stripe onboarding. Please try again from the dashboard.')
+        )
+        shouldClearParams = true
+      }
+
+      if (shouldClearParams) {
+        setSearchParams({})
+      }
     }
 
     initializeDashboard()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const isModerator = user?.is_moderator || user?.is_staff
+
+  const availableTabs = useMemo(() => {
+    const tabs = [
+      { key: 'campaigns', label: t('dashboard.myCampaigns') },
+      { key: 'stripe', label: t('dashboard.stripeTab', 'Stripe Overview') },
+    ]
+
+    if (isModerator) {
+      tabs.push(
+        { key: 'moderation', label: t('moderation.title', 'Moderation') },
+        { key: 'news', label: t('dashboard.newsManagement', 'News Management') },
+      )
+    }
+
+    return tabs
+  }, [isModerator, t])
+
+  useEffect(() => {
+    if (!availableTabs.some((tab) => tab.key === activeTab)) {
+      setActiveTab(availableTabs[0]?.key || 'campaigns')
+    }
+  }, [availableTabs, activeTab])
 
   const checkAuth = async () => {
     let token = null
@@ -156,27 +203,80 @@ function Dashboard() {
 
       // Get current user ID - use user state if available, otherwise fetch it
       let currentUserId
+      let isCurrentUserModerator = user?.is_moderator || user?.is_staff
       if (user) {
         currentUserId = user.id
       } else {
         const userResponse = await api.get('/users/me/')
         currentUserId = userResponse.data.id
+        isCurrentUserModerator = userResponse.data.is_moderator || userResponse.data.is_staff
+        setUser((prev) => prev || userResponse.data)
       }
 
       // Filter to show only campaigns created by the current user
-      const myCampaigns = allCampaigns.filter(campaign =>
-        campaign.created_by && campaign.created_by.id === currentUserId
+      const myCampaigns = allCampaigns.filter(
+        (campaign) => campaign.created_by && campaign.created_by.id === currentUserId
       )
       setCampaigns(myCampaigns)
+      if (isCurrentUserModerator) {
+        setModerationCampaigns(allCampaigns)
+      } else {
+        setModerationCampaigns([])
+      }
       if (!user || (!user.is_moderator && !user.is_staff)) {
         setLoading(false)
       }
     } catch (error) {
       logError(error, 'fetchCampaigns')
       setCampaigns([]) // Set empty array on error
+      setModerationCampaigns([])
       if (!user || (!user.is_moderator && !user.is_staff)) {
         setLoading(false)
       }
+    }
+  }
+
+  const fetchStripeStatus = async () => {
+    try {
+      const response = await api.get('/users/stripe/status/')
+      setStripeStatus(response.data)
+    } catch (error) {
+      logError(error, 'fetchStripeStatus')
+    }
+  }
+
+  const handleResumeStripeOnboarding = async () => {
+    setStripeLoading(true)
+    try {
+      const response = await api.post('/users/stripe/onboard/')
+      const data = response.data || {}
+
+      if (data.stripe_ready) {
+        setSuccessMessage(t('dashboard.stripeReady', 'Stripe onboarding complete!'))
+        await fetchStripeStatus()
+        setTimeout(() => setSuccessMessage(''), 5000)
+        return
+      }
+
+      if (data.onboarding_url) {
+        window.location.href = data.onboarding_url
+        return
+      }
+
+      setErrorMessage(
+        t('dashboard.stripePendingMessage', 'Stripe onboarding is still required before donations can be collected.')
+      )
+      setTimeout(() => setErrorMessage(''), 5000)
+    } catch (error) {
+      logError(error, 'handleResumeStripeOnboarding')
+      const errorMsg = extractErrorMessage(
+        error,
+        t('dashboard.stripeResumeError', 'Unable to start Stripe onboarding. Please try again.')
+      )
+      setErrorMessage(errorMsg)
+      setTimeout(() => setErrorMessage(''), 5000)
+    } finally {
+      setStripeLoading(false)
     }
   }
 
@@ -238,6 +338,48 @@ function Dashboard() {
     } catch (error) {
       logError(error, 'handleCancel')
       const errorMsg = extractErrorMessage(error, t('dashboard.cancelError', 'Error cancelling campaign'))
+      setErrorMessage(errorMsg)
+      setTimeout(() => setErrorMessage(''), 5000)
+    }
+  }
+
+  const handleModeratorSuspend = async (campaignId) => {
+    const confirmed = window.confirm(
+      t('moderation.suspendConfirm', 'Are you sure you want to suspend this campaign?')
+    )
+    if (!confirmed) {
+      return
+    }
+
+    try {
+      await api.post(`/campaigns/${campaignId}/suspend/`)
+      setSuccessMessage(t('moderation.suspendSuccess', 'Campaign suspended successfully!'))
+      await Promise.all([fetchCampaigns(), fetchPendingCampaigns()])
+      setTimeout(() => setSuccessMessage(''), 5000)
+    } catch (error) {
+      logError(error, 'handleModeratorSuspend')
+      const errorMsg = extractErrorMessage(error, t('moderation.suspendError', 'Error suspending campaign'))
+      setErrorMessage(errorMsg)
+      setTimeout(() => setErrorMessage(''), 5000)
+    }
+  }
+
+  const handleModeratorResume = async (campaignId) => {
+    const confirmed = window.confirm(
+      t('moderation.resumeConfirm', 'Are you sure you want to resume this campaign?')
+    )
+    if (!confirmed) {
+      return
+    }
+
+    try {
+      await api.post(`/campaigns/${campaignId}/resume/`)
+      setSuccessMessage(t('moderation.resumeSuccess', 'Campaign resumed successfully!'))
+      await Promise.all([fetchCampaigns(), fetchPendingCampaigns()])
+      setTimeout(() => setSuccessMessage(''), 5000)
+    } catch (error) {
+      logError(error, 'handleModeratorResume')
+      const errorMsg = extractErrorMessage(error, t('moderation.resumeError', 'Error resuming campaign'))
       setErrorMessage(errorMsg)
       setTimeout(() => setErrorMessage(''), 5000)
     }
@@ -322,6 +464,29 @@ function Dashboard() {
     }
   }
 
+  const stripeFlags = useMemo(() => {
+    if (!stripeStatus) {
+      return []
+    }
+    return [
+      {
+        key: 'charges',
+        label: t('dashboard.stripeChargesEnabled', 'Charges enabled'),
+        value: !!stripeStatus.charges_enabled,
+      },
+      {
+        key: 'payouts',
+        label: t('dashboard.stripePayoutsEnabled', 'Payouts enabled'),
+        value: !!stripeStatus.payouts_enabled,
+      },
+      {
+        key: 'details',
+        label: t('dashboard.stripeDetailsSubmitted', 'Details submitted'),
+        value: !!stripeStatus.details_submitted,
+      },
+    ]
+  }, [stripeStatus, t])
+
   if (loading) {
     return <div className="container">{t('common.loading')}</div>
   }
@@ -379,6 +544,32 @@ function Dashboard() {
           autoHide={true}
           duration={5000}
         />
+        {stripeStatus && !stripeStatus.stripe_ready && (
+          <div className="stripe-alert">
+            <p>
+              {stripeStatus.has_account
+                ? t(
+                    'dashboard.stripeAlert',
+                    'Stripe onboarding is required before your campaigns can be moderated or accept donations.'
+                  )
+                : t(
+                    'dashboard.stripeNoAccount',
+                    'Create your Stripe account to submit campaigns and receive donations.'
+                  )}
+            </p>
+            <div className="stripe-actions">
+              <button
+                className="btn btn-stripe"
+                onClick={handleResumeStripeOnboarding}
+                disabled={stripeLoading}
+              >
+                {stripeLoading
+                  ? t('dashboard.stripeLoading', 'Preparing Stripe...')
+                  : t('dashboard.resumeStripe', 'Resume Stripe setup')}
+              </button>
+            </div>
+          </div>
+        )}
         {user && (
           <div className="user-info">
             <p><strong>{t('dashboard.email')}:</strong> {user.email}</p>
@@ -387,26 +578,17 @@ function Dashboard() {
           </div>
         )}
 
-        {(user?.is_moderator || user?.is_staff) && (
+        {availableTabs.length > 1 && (
           <div className="dashboard-tabs">
-            <button
-              className={`tab-button ${activeTab === 'campaigns' ? 'active' : ''}`}
-              onClick={() => setActiveTab('campaigns')}
-            >
-              {t('dashboard.myCampaigns')}
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'moderation' ? 'active' : ''}`}
-              onClick={() => setActiveTab('moderation')}
-            >
-              {t('moderation.title', 'Moderation')}
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'news' ? 'active' : ''}`}
-              onClick={() => setActiveTab('news')}
-            >
-              {t('dashboard.newsManagement', 'News Management')}
-            </button>
+            {availableTabs.map((tab) => (
+              <button
+                key={tab.key}
+                className={`tab-button ${activeTab === tab.key ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         )}
 
@@ -441,6 +623,14 @@ function Dashboard() {
                       <p className="campaign-progress">
                         €{campaign.current_amount.toLocaleString()} / €{campaign.target_amount.toLocaleString()}
                       </p>
+                      {!campaign.stripe_ready && (
+                        <p className="stripe-status-note">
+                          {t(
+                            'dashboard.campaignStripePending',
+                            'Stripe onboarding incomplete — this campaign cannot be moderated or accept donations yet.'
+                          )}
+                        </p>
+                      )}
                       {campaign.moderation_notes && (
                         <div className="moderation-notes">
                           <strong>{t('dashboard.moderationNotes', 'Moderator Comments')}:</strong>
@@ -487,6 +677,112 @@ function Dashboard() {
           </div>
         )}
 
+        {activeTab === 'stripe' && (
+          <div className="stripe-overview">
+            <h2>{t('dashboard.stripeOverviewHeading', 'Stripe Overview')}</h2>
+            <div className="stripe-summary-card">
+              <h3>{t('dashboard.stripeAccountSummary', 'Account Summary')}</h3>
+              {stripeStatus ? (
+                <>
+                  <p className={`stripe-summary-status ${stripeStatus.stripe_ready ? 'ready' : 'pending'}`}>
+                    {stripeStatus.stripe_ready
+                      ? t('dashboard.stripeStatusReady', 'Account ready for payouts')
+                      : t('dashboard.stripeStatusNeedsAttention', 'Account needs attention')}
+                  </p>
+                  {stripeStatus.stripe_account_id && (
+                    <p className="stripe-summary-id">
+                      <strong>{t('dashboard.stripeAccountId', 'Account ID')}:</strong>{' '}
+                      <code>{stripeStatus.stripe_account_id}</code>
+                    </p>
+                  )}
+                  <div className="stripe-summary-flags">
+                    {stripeFlags.map((flag) => (
+                      <span
+                        key={flag.key}
+                        className={`stripe-flag ${flag.value ? 'stripe-flag--ok' : 'stripe-flag--pending'}`}
+                      >
+                        {flag.value ? '✓' : '•'} {flag.label}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="stripe-summary-requirements">
+                    <h4>{t('dashboard.stripeRequirements', 'Outstanding requirements')}</h4>
+                    {Array.isArray(stripeStatus.requirements_due) && stripeStatus.requirements_due.length > 0 ? (
+                      <>
+                        <p className="stripe-requirements-help">
+                          {t(
+                            'dashboard.stripeRequirementsHelp',
+                            'Complete the following items in Stripe to enable payouts:'
+                          )}
+                        </p>
+                        <ul>
+                          {stripeStatus.requirements_due.map((item, index) => (
+                            <li key={`${item}-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : (
+                      <p>{t('dashboard.stripeNoRequirements', 'No outstanding requirements.')}</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p>{t('dashboard.stripeStatusUnknown', 'Stripe status is currently unavailable.')}</p>
+              )}
+            </div>
+
+            <div className="stripe-campaigns-card">
+              <h3>{t('dashboard.stripeCampaignsHeading', 'Campaign Stripe Status')}</h3>
+              {campaigns.length > 0 ? (
+                <div className="stripe-campaigns-list">
+                  {campaigns.map((campaign) => (
+                    <div key={campaign.id} className="stripe-campaign-item">
+                      <div className="stripe-campaign-header">
+                        <h4>{campaign.title}</h4>
+                        {getStatusBadge(campaign.status)}
+                      </div>
+                      <div className="stripe-campaign-meta">
+                        <p>
+                          <strong>{t('moderation.targetAmount', 'Target')}:</strong>{' '}
+                          €{campaign.target_amount.toLocaleString()}
+                        </p>
+                        <p>
+                          <strong>{t('moderation.createdAt', 'Created')}:</strong>{' '}
+                          {new Date(campaign.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="stripe-campaign-flags">
+                        <span
+                          className={`stripe-chip ${campaign.stripe_ready ? 'stripe-chip--ok' : 'stripe-chip--pending'}`}
+                        >
+                          {campaign.stripe_ready
+                            ? t('dashboard.stripeReadyLabel', 'Stripe ready')
+                            : t('dashboard.stripeNotReadyLabel', 'Stripe not ready')}
+                        </span>
+                        {campaign.stripe_account_id && (
+                          <span className="stripe-chip stripe-chip--id">
+                            {t('dashboard.stripeAccountId', 'Account ID')}: {campaign.stripe_account_id}
+                          </span>
+                        )}
+                      </div>
+                      {!campaign.stripe_ready && (
+                        <p className="stripe-campaign-warning">
+                          {t(
+                            'dashboard.stripeCampaignNeedsStripe',
+                            'Complete Stripe onboarding to accept donations.'
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>{t('dashboard.stripeCampaignsEmpty', 'No campaigns to display yet.')}</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'moderation' && (user?.is_moderator || user?.is_staff) && (
           <div className="moderation-section">
             <h2>{t('moderation.pendingCampaigns', 'Pending Campaigns')}</h2>
@@ -497,14 +793,17 @@ function Dashboard() {
                     <div className="campaign-info">
                       <h3>{campaign.title}</h3>
                       <p className="campaign-creator">
-                        <strong>{t('moderation.createdBy', 'Created by')}:</strong> {campaign.created_by?.email || 'Unknown'}
+                        <strong>{t('moderation.createdBy', 'Created by')}:</strong>{' '}
+                        {campaign.created_by?.email || 'Unknown'}
                       </p>
                       <p className="campaign-description">{campaign.short_description}</p>
                       <p className="campaign-target">
-                        <strong>{t('moderation.targetAmount', 'Target')}:</strong> ${campaign.target_amount.toLocaleString()}
+                        <strong>{t('moderation.targetAmount', 'Target')}:</strong>{' '}
+                        €{campaign.target_amount.toLocaleString()}
                       </p>
                       <p className="campaign-date">
-                        <strong>{t('moderation.createdAt', 'Created')}:</strong> {new Date(campaign.created_at).toLocaleDateString()}
+                        <strong>{t('moderation.createdAt', 'Created')}:</strong>{' '}
+                        {new Date(campaign.created_at).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="campaign-actions">
@@ -564,7 +863,88 @@ function Dashboard() {
                 ))}
               </div>
             ) : (
-              <p className="empty-message">{t('moderation.noPendingCampaigns', 'No pending campaigns to moderate.')}</p>
+              <p className="empty-message">
+                {t('moderation.noPendingCampaigns', 'No pending campaigns to moderate.')}
+              </p>
+            )}
+
+            <h2 className="moderation-subheading">{t('moderation.allCampaigns', 'All Campaigns')}</h2>
+            {moderationCampaigns.length > 0 ? (
+              <div className="campaigns-list">
+                {moderationCampaigns.map((campaign) => {
+                  const canSuspend = !['suspended', 'cancelled'].includes(campaign.status)
+                  const canResume = ['suspended', 'cancelled'].includes(campaign.status)
+
+                  return (
+                    <div key={campaign.id} className="dashboard-campaign-card">
+                      <div className="campaign-info">
+                        <h3>{campaign.title}</h3>
+                        <p className="campaign-creator">
+                          <strong>{t('moderation.createdBy', 'Created by')}:</strong>{' '}
+                          {campaign.created_by?.email || 'Unknown'}
+                        </p>
+                        <p className="campaign-status">
+                          {t('dashboard.status')}: {getStatusBadge(campaign.status)}
+                        </p>
+                        <p className="campaign-target">
+                          <strong>{t('moderation.targetAmount', 'Target')}:</strong>{' '}
+                          €{campaign.target_amount.toLocaleString()}
+                        </p>
+                        <p className="campaign-date">
+                          <strong>{t('moderation.createdAt', 'Created')}:</strong>{' '}
+                          {new Date(campaign.created_at).toLocaleDateString()}
+                        </p>
+                        {campaign.stripe_account_id && (
+                          <p className="campaign-stripe-id">
+                            <strong>{t('dashboard.stripeAccountId', 'Account ID')}:</strong>{' '}
+                            <code>{campaign.stripe_account_id}</code>
+                          </p>
+                        )}
+                        {!campaign.stripe_ready && (
+                          <p className="stripe-status-note">
+                            {t(
+                              'moderation.campaignNeedsStripe',
+                              'Stripe onboarding incomplete — donations are disabled.'
+                            )}
+                          </p>
+                        )}
+                      </div>
+                      <div className="campaign-actions">
+                        <Link to={`/campaign/${campaign.id}`} className="btn btn-view">
+                          <span className="btn-icon">👁</span>
+                          <span>{t('moderation.viewDetails', 'View Details')}</span>
+                        </Link>
+                        {canSuspend && (
+                          <button
+                            onClick={() => handleModeratorSuspend(campaign.id)}
+                            className="btn btn-suspend"
+                          >
+                            <span className="btn-icon">⏸</span>
+                            <span>{t('moderation.suspend', 'Suspend')}</span>
+                          </button>
+                        )}
+                        {canResume && (
+                          <button
+                            onClick={() => handleModeratorResume(campaign.id)}
+                            className="btn btn-resume"
+                            disabled={!campaign.stripe_ready}
+                            title={
+                              campaign.stripe_ready
+                                ? undefined
+                                : t('moderation.resumeRequiresStripe', 'Complete Stripe onboarding before resuming.')
+                            }
+                          >
+                            <span className="btn-icon">↻</span>
+                            <span>{t('moderation.resume', 'Resume')}</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="empty-message">{t('moderation.noCampaigns', 'No campaigns available.')}</p>
             )}
           </div>
         )}

@@ -7,7 +7,8 @@ import './Moderation.css'
 function Moderation() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [campaigns, setCampaigns] = useState([])
+  const [pendingCampaigns, setPendingCampaigns] = useState([])
+  const [suspendedCampaigns, setSuspendedCampaigns] = useState([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
@@ -18,9 +19,9 @@ function Moderation() {
   useEffect(() => {
     const initializeModeration = async () => {
       await checkAuth()
-      await fetchPendingCampaigns()
+      await fetchCampaigns()
     }
-    
+
     initializeModeration()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -36,7 +37,7 @@ function Moderation() {
       const response = await api.get('/users/me/')
       const currentUser = response.data
       setUser(currentUser)
-      
+
       // Check if user is moderator or staff
       if (!currentUser.is_moderator && !currentUser.is_staff) {
         navigate('/dashboard')
@@ -48,14 +49,20 @@ function Moderation() {
     }
   }
 
-  const fetchPendingCampaigns = async () => {
+  const fetchCampaigns = async () => {
     try {
-      const response = await api.get('/campaigns/?status=pending')
-      const allCampaigns = response.data.results || response.data
-      setCampaigns(allCampaigns)
+      const [pendingResponse, suspendedResponse] = await Promise.all([
+        api.get('/campaigns/?status=pending'),
+        api.get('/campaigns/?status=suspended'),
+      ])
+
+      const pending = pendingResponse.data.results || pendingResponse.data || []
+      const suspended = suspendedResponse.data.results || suspendedResponse.data || []
+      setPendingCampaigns(pending)
+      setSuspendedCampaigns(suspended)
       setLoading(false)
     } catch (error) {
-      console.error('Error fetching pending campaigns:', error)
+      console.error('Error fetching campaigns:', error)
       setLoading(false)
     }
   }
@@ -68,7 +75,7 @@ function Moderation() {
       setSuccessMessage(t('moderation.approveSuccess', 'Campaign approved successfully!'))
       setShowNotesForm(null)
       setNotes('')
-      fetchPendingCampaigns()
+      fetchCampaigns()
       setTimeout(() => setSuccessMessage(''), 5000)
     } catch (error) {
       console.error('Error approving campaign:', error)
@@ -92,13 +99,118 @@ function Moderation() {
       setSuccessMessage(t('moderation.rejectSuccess', 'Campaign rejected successfully!'))
       setShowNotesForm(null)
       setNotes('')
-      fetchPendingCampaigns()
+      fetchCampaigns()
       setTimeout(() => setSuccessMessage(''), 5000)
     } catch (error) {
       console.error('Error rejecting campaign:', error)
       const errorMsg = error.response?.data?.error || error.response?.data?.detail || t('moderation.rejectError', 'Error rejecting campaign')
       setErrorMessage(errorMsg)
       setTimeout(() => setErrorMessage(''), 5000)
+    }
+  }
+
+  const handleResume = async (campaignId) => {
+    try {
+      await api.post(`/campaigns/${campaignId}/resume/`)
+      setSuccessMessage(t('moderation.resumeSuccess', 'Campaign resumed successfully!'))
+      fetchCampaigns()
+      setTimeout(() => setSuccessMessage(''), 5000)
+    } catch (error) {
+      console.error('Error resuming campaign:', error)
+      const errorMsg = error.response?.data?.error || error.response?.data?.detail || t('moderation.resumeError', 'Error resuming campaign')
+      setErrorMessage(errorMsg)
+      setTimeout(() => setErrorMessage(''), 5000)
+    }
+  }
+
+  const getStripeStatus = (campaign) => {
+    const stripe = campaign.created_by?.stripe
+    const accountId = campaign.stripe_account_id || stripe?.stripe_account_id || null
+
+    if (!stripe) {
+      return {
+        variant: 'unknown',
+        icon: 'ℹ️',
+        title: t('moderation.stripeStatusUnknown', 'Stripe status unavailable'),
+        description: t(
+          'moderation.stripeStatusNoData',
+          'No Stripe information was returned for this campaign owner.'
+        ),
+        flags: [],
+        requirements: [],
+        accountId,
+      }
+    }
+
+    if (!stripe.has_account) {
+      return {
+        variant: 'error',
+        icon: '✖️',
+        title: t('moderation.stripeStatusMissing', 'Stripe account missing'),
+        description: t(
+          'moderation.stripeStatusMissingDesc',
+          'The campaign owner has not connected a Stripe account yet.'
+        ),
+        flags: [],
+        requirements: [],
+        accountId,
+      }
+    }
+
+    const flags = [
+      {
+        key: 'charges',
+        label: t('moderation.stripeChargesEnabled', 'Charges enabled'),
+        value: !!stripe.charges_enabled,
+      },
+      {
+        key: 'payouts',
+        label: t('moderation.stripePayoutsEnabled', 'Payouts enabled'),
+        value: !!stripe.payouts_enabled,
+      },
+      {
+        key: 'details',
+        label: t('moderation.stripeDetailsSubmitted', 'Details submitted'),
+        value: !!stripe.details_submitted,
+      },
+    ]
+
+    if (campaign.stripe_ready || stripe.ready) {
+      return {
+        variant: 'ready',
+        icon: '✅',
+        title: t('moderation.stripeStatusReady', 'Stripe account ready'),
+        description: t(
+          'moderation.stripeStatusReadyDesc',
+          'All checks passed. Donations can be processed.'
+        ),
+        flags,
+        requirements: [],
+        accountId,
+      }
+    }
+
+    const requirements = Array.isArray(stripe.requirements_due)
+      ? stripe.requirements_due.filter(Boolean)
+      : []
+
+    return {
+      variant: 'warning',
+      icon: '⚠️',
+      title: t('moderation.stripeStatusPending', 'Stripe account needs attention'),
+      description:
+        requirements.length > 0
+          ? t(
+              'moderation.stripeStatusPendingDesc',
+              'There are outstanding Stripe requirements that need to be completed.'
+            )
+          : t(
+              'moderation.stripeStatusPendingNoList',
+              'Stripe has not finished verifying this account yet.'
+            ),
+      flags,
+      requirements,
+      accountId,
     }
   }
 
@@ -110,12 +222,12 @@ function Moderation() {
     <div className="moderation">
       <div className="container">
         <h1>{t('moderation.title', 'Moderation Dashboard')}</h1>
-        
+
         {successMessage && (
           <div className="success-message">
             {successMessage}
-            <button 
-              className="close-message" 
+            <button
+              className="close-message"
               onClick={() => setSuccessMessage('')}
             >
               ×
@@ -126,8 +238,8 @@ function Moderation() {
         {errorMessage && (
           <div className="error-message">
             {errorMessage}
-            <button 
-              className="close-message" 
+            <button
+              className="close-message"
               onClick={() => setErrorMessage('')}
             >
               ×
@@ -137,9 +249,12 @@ function Moderation() {
 
         <div className="moderation-section">
           <h2>{t('moderation.pendingCampaigns', 'Pending Campaigns')}</h2>
-          {campaigns.length > 0 ? (
+          {pendingCampaigns.length > 0 ? (
             <div className="campaigns-list">
-              {campaigns.map((campaign) => (
+              {pendingCampaigns.map((campaign) => {
+                const stripeStatus = getStripeStatus(campaign)
+
+                return (
                 <div key={campaign.id} className="moderation-campaign-card">
                   <div className="campaign-info">
                     <h3>{campaign.title}</h3>
@@ -148,11 +263,50 @@ function Moderation() {
                     </p>
                     <p className="campaign-description">{campaign.short_description}</p>
                     <p className="campaign-target">
-                      <strong>{t('moderation.targetAmount', 'Target')}:</strong> ${campaign.target_amount.toLocaleString()}
+                      <strong>{t('moderation.targetAmount', 'Target')}:</strong> €{campaign.target_amount.toLocaleString()}
                     </p>
                     <p className="campaign-date">
                       <strong>{t('moderation.createdAt', 'Created')}:</strong> {new Date(campaign.created_at).toLocaleDateString()}
                     </p>
+
+                      <div className={`stripe-status stripe-status--${stripeStatus.variant}`}>
+                        <div className="stripe-status-header">
+                          <span className="stripe-status-icon">{stripeStatus.icon}</span>
+                          <div>
+                            <p className="stripe-status-title">{stripeStatus.title}</p>
+                            <p className="stripe-status-description">{stripeStatus.description}</p>
+                          </div>
+                        </div>
+                        {stripeStatus.accountId && (
+                          <p className="stripe-status-account">
+                            {t('moderation.stripeAccountId', 'Account ID')}: <code>{stripeStatus.accountId}</code>
+                          </p>
+                        )}
+                        {stripeStatus.flags.length > 0 && (
+                          <div className="stripe-status-flags">
+                            {stripeStatus.flags.map((flag) => (
+                              <span
+                                key={flag.key}
+                                className={`stripe-flag ${flag.value ? 'stripe-flag--ok' : 'stripe-flag--pending'}`}
+                              >
+                                {flag.value ? '✓' : '•'} {flag.label}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {stripeStatus.requirements.length > 0 && (
+                          <div className="stripe-status-requirements">
+                            <p className="stripe-status-requirements-title">
+                              {t('moderation.stripeRequirementsTitle', 'Outstanding requirements')}
+                            </p>
+                            <ul>
+                              {stripeStatus.requirements.map((item, idx) => (
+                                <li key={idx}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                   </div>
                   <div className="campaign-actions">
                     {showNotesForm === campaign.id ? (
@@ -208,10 +362,93 @@ function Moderation() {
                     )}
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <p className="empty-message">{t('moderation.noPendingCampaigns', 'No pending campaigns to moderate.')}</p>
+          )}
+        </div>
+        <div className="moderation-section">
+          <h2>{t('moderation.suspendedCampaigns', 'Suspended Campaigns')}</h2>
+          {suspendedCampaigns.length > 0 ? (
+            <div className="campaigns-list">
+              {suspendedCampaigns.map((campaign) => {
+                const stripeStatus = getStripeStatus(campaign)
+
+                return (
+                  <div key={campaign.id} className="moderation-campaign-card">
+                    <div className="campaign-info">
+                      <h3>{campaign.title}</h3>
+                      <p className="campaign-creator">
+                        <strong>{t('moderation.createdBy', 'Created by')}:</strong> {campaign.created_by?.email || 'Unknown'}
+                      </p>
+                      <p className="campaign-description">{campaign.short_description}</p>
+                      <p className="campaign-target">
+                        <strong>{t('moderation.targetAmount', 'Target')}:</strong> €{campaign.target_amount.toLocaleString()}
+                      </p>
+                      <p className="campaign-date">
+                        <strong>{t('moderation.createdAt', 'Created')}:</strong> {new Date(campaign.created_at).toLocaleDateString()}
+                      </p>
+
+                      <div className={`stripe-status stripe-status--${stripeStatus.variant}`}>
+                        <div className="stripe-status-header">
+                          <span className="stripe-status-icon">{stripeStatus.icon}</span>
+                          <div>
+                            <p className="stripe-status-title">{stripeStatus.title}</p>
+                            <p className="stripe-status-description">{stripeStatus.description}</p>
+                          </div>
+                        </div>
+                        {stripeStatus.accountId && (
+                          <p className="stripe-status-account">
+                            {t('moderation.stripeAccountId', 'Account ID')}: <code>{stripeStatus.accountId}</code>
+                          </p>
+                        )}
+                        {stripeStatus.flags.length > 0 && (
+                          <div className="stripe-status-flags">
+                            {stripeStatus.flags.map((flag) => (
+                              <span
+                                key={flag.key}
+                                className={`stripe-flag ${flag.value ? 'stripe-flag--ok' : 'stripe-flag--pending'}`}
+                              >
+                                {flag.value ? '✓' : '•'} {flag.label}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {stripeStatus.requirements.length > 0 && (
+                          <div className="stripe-status-requirements">
+                            <p className="stripe-status-requirements-title">
+                              {t('moderation.stripeRequirementsTitle', 'Outstanding requirements')}
+                            </p>
+                            <ul>
+                              {stripeStatus.requirements.map((item, idx) => (
+                                <li key={idx}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="campaign-actions">
+                      <Link to={`/campaign/${campaign.id}`} className="btn btn-view">
+                        <span className="btn-icon">👁</span>
+                        <span>{t('moderation.viewDetails', 'View Details')}</span>
+                      </Link>
+                      <button
+                        onClick={() => handleResume(campaign.id)}
+                        className="btn btn-resume"
+                      >
+                        <span className="btn-icon">↻</span>
+                        <span>{t('moderation.resume', 'Resume')}</span>
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="empty-message">{t('moderation.noSuspendedCampaigns', 'No suspended campaigns.')}</p>
           )}
         </div>
       </div>
@@ -220,4 +457,3 @@ function Moderation() {
 }
 
 export default Moderation
-
