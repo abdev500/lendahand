@@ -205,6 +205,17 @@
   box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3);
 }
 
+.btn-resume {
+  background: linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%);
+  color: white;
+}
+
+.btn-resume:hover {
+  background: linear-gradient(135deg, #1b4332 0%, #0b3d2e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.3);
+}
+
 .btn-cancel {
   background: linear-gradient(135deg, #a01c1c 0%, #8b0000 100%);
   color: white;
@@ -241,6 +252,120 @@
   min-width: 100px;
 }
 
+.stripe-status {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid #dadce0;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stripe-status--ready {
+  border-color: #2d6a4f;
+  background: #f1f8f3;
+}
+
+.stripe-status--warning {
+  border-color: #f4a261;
+  background: #fff4e6;
+}
+
+.stripe-status--error {
+  border-color: #d62828;
+  background: #fff1f1;
+}
+
+.stripe-status--unknown {
+  border-color: #a0aec0;
+  background: #f7fafc;
+}
+
+.stripe-status-header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.stripe-status-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.stripe-status-title {
+  margin: 0;
+  font-weight: 600;
+  color: #2b2d42;
+}
+
+.stripe-status-description {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #4a5568;
+}
+
+.stripe-status-account {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #2d3748;
+}
+
+.stripe-status-account code {
+  font-family: 'Courier New', Courier, monospace;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.stripe-status-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.stripe-flag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  background: rgba(0, 0, 0, 0.05);
+  color: #2f4858;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.stripe-flag--ok {
+  background: rgba(45, 106, 79, 0.15);
+  color: #2d6a4f;
+}
+
+.stripe-flag--pending {
+  background: rgba(214, 40, 40, 0.15);
+  color: #a4161a;
+}
+
+.stripe-status-requirements-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #8b0000;
+}
+
+.stripe-status-requirements ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.stripe-status-requirements li {
+  font-size: 0.75rem;
+  color: #4a5568;
+  margin-bottom: 0.25rem;
+}
+
 .empty-message {
   color: #999;
   font-style: italic;
@@ -265,4 +390,3 @@
     width: 100%;
   }
 }
-

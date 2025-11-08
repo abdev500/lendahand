@@ -5,8 +5,7 @@ URL configuration for lendahand project.
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path, re_path
-from django.views.generic import TemplateView
+from django.urls import include, path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
@@ -28,10 +27,6 @@ urlpatterns = [
     path("api/swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
     path("api/redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
     path("accounts/", include("allauth.urls")),
-    # Moderation dashboard (Django templates)
-    path("moderation/", include("donations.moderation_urls")),
-    # Catch-all for React app (production)
-    re_path(r"^(?!api|admin|moderation|media|static|accounts).*$", TemplateView.as_view(template_name="index.html")),
 ]
 
 if settings.DEBUG:

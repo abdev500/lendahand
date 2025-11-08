@@ -37,6 +37,9 @@ backend:
     STRIPE_SECRET_KEY: ""
     STRIPE_PUBLISHABLE_KEY: ""
     STRIPE_WEBHOOK_SECRET: ""
+    STRIPE_CLIENT_ID: ""
+    STRIPE_ONBOARDING_RETURN_URL: ""
+    STRIPE_ONBOARDING_REFRESH_URL: ""
     FRONTEND_URL: "https://test.lend-a-hand.me"  # Frontend URL for Stripe redirects
     ALLOWED_HOSTS: "*"
     # MinIO/S3 Storage Configuration

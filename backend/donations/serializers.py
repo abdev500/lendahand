@@ -2,10 +2,20 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import Campaign, CampaignMedia, Donation, News, NewsMedia, User
+from .models import (
+    Campaign,
+    CampaignMedia,
+    Donation,
+    News,
+    NewsMedia,
+    User,
+    UserStripeAccount,
+)
 
 
 class UserSerializer(serializers.ModelSerializer):
+    stripe = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -16,8 +26,40 @@ class UserSerializer(serializers.ModelSerializer):
             "address",
             "is_moderator",
             "is_staff",
+            "stripe",
         ]
         read_only_fields = ["id", "is_moderator", "is_staff"]
+
+    def get_stripe(self, obj):
+        try:
+            account = obj.stripe_account
+        except UserStripeAccount.DoesNotExist:
+            return {
+                "has_account": False,
+                "ready": False,
+            }
+
+        onboarding_expires_at = account.onboarding_expires_at
+        if onboarding_expires_at:
+            try:
+                onboarding_expires_at = onboarding_expires_at.isoformat()
+            except AttributeError:
+                # Handle cases where the value is stored as a string or another non-datetime type
+                onboarding_expires_at = str(onboarding_expires_at)
+        else:
+            onboarding_expires_at = None
+
+        return {
+            "has_account": True,
+            "ready": account.is_ready,
+            "stripe_account_id": account.stripe_account_id,
+            "charges_enabled": account.charges_enabled,
+            "payouts_enabled": account.payouts_enabled,
+            "details_submitted": account.details_submitted,
+            "requirements_due": account.requirements_due,
+            "onboarding_url": account.onboarding_url,
+            "onboarding_expires_at": onboarding_expires_at,
+        }
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -94,6 +136,8 @@ class CampaignSerializer(serializers.ModelSerializer):
     media = CampaignMediaSerializer(many=True, read_only=True)
     created_by = UserSerializer(read_only=True)
     progress_percentage = serializers.ReadOnlyField()
+    stripe_ready = serializers.ReadOnlyField()
+    stripe_account_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Campaign
@@ -111,6 +155,8 @@ class CampaignSerializer(serializers.ModelSerializer):
             "media",
             "progress_percentage",
             "moderation_notes",
+            "stripe_ready",
+            "stripe_account_id",
         ]
         read_only_fields = [
             "id",
@@ -118,7 +164,14 @@ class CampaignSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "created_by",
+            "stripe_ready",
+            "stripe_account_id",
         ]
+
+    def get_stripe_account_id(self, obj):
+        if obj.stripe_account:
+            return obj.stripe_account.stripe_account_id
+        return None
 
 
 class CampaignCreateSerializer(serializers.ModelSerializer):
@@ -201,9 +254,11 @@ class DonationCreateSerializer(serializers.ModelSerializer):
 
     def validate_campaign_id(self, value):
         try:
-            Campaign.objects.get(id=value, status="approved")
+            campaign = Campaign.objects.get(id=value, status="approved")
         except Campaign.DoesNotExist:
             raise serializers.ValidationError("Campaign not found or not approved")
+        if not campaign.stripe_ready:
+            raise serializers.ValidationError("Campaign is not ready to accept donations")
         return value
 
 

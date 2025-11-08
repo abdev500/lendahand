@@ -101,6 +101,46 @@
   flex-wrap: wrap;
 }
 
+.stripe-alert {
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-left: 4px solid #ffc107;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  color: #856404;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.stripe-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-stripe {
+  background: #635bff;
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-stripe:hover:not(:disabled) {
+  background: #4b44d4;
+}
+
+.btn-stripe:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .status-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
@@ -160,6 +200,13 @@
 .campaign-progress {
   font-weight: 600;
   color: var(--color-red);
+}
+
+.stripe-status-note {
+  margin-top: 0.5rem;
+  color: #856404;
+  font-size: 0.95rem;
+  font-style: italic;
 }
 
 .moderation-notes {
@@ -296,6 +343,23 @@
   box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3);
 }
 
+.btn-resume {
+  background: linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%);
+  color: var(--color-white);
+}
+
+.btn-resume:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1b4332 0%, #0b3d2e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.3);
+}
+
+.btn-resume:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .moderation-section,
 .news-section {
   margin-top: 2rem;
@@ -307,6 +371,13 @@
   font-size: 2rem;
 }
 
+.moderation-subheading {
+  margin-top: 2.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+  color: var(--color-dark-gray);
+}
+
 .moderation-section .campaign-creator,
 .moderation-section .campaign-description,
 .moderation-section .campaign-target,
@@ -316,9 +387,199 @@
   font-size: 0.9rem;
 }
 
+.campaign-stripe-id {
+  margin: 0.35rem 0;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
 .moderation-section .campaign-description {
   margin-top: 0.5rem;
   line-height: 1.5;
+}
+
+.stripe-overview {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.stripe-summary-card,
+.stripe-campaigns-card {
+  background: var(--color-white);
+  padding: 1.75rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.stripe-summary-card h3,
+.stripe-campaigns-card h3 {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  color: #172b4d;
+}
+
+.stripe-summary-status {
+  font-weight: 700;
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stripe-summary-status.ready {
+  background: rgba(45, 106, 79, 0.15);
+  color: #1b4332;
+}
+
+.stripe-summary-status.pending {
+  background: rgba(255, 152, 0, 0.2);
+  color: #8b4513;
+}
+
+.stripe-summary-id {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #2f4858;
+}
+
+.stripe-summary-id code {
+  font-family: 'Courier New', monospace;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.stripe-summary-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.stripe-flag {
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(0, 0, 0, 0.05);
+  color: #2f4858;
+}
+
+.stripe-flag--ok {
+  background: rgba(45, 106, 79, 0.18);
+  color: #1b4332;
+}
+
+.stripe-flag--pending {
+  background: rgba(214, 40, 40, 0.18);
+  color: #b13a3a;
+}
+
+.stripe-summary-requirements h4 {
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  color: #2b2d42;
+}
+
+.stripe-summary-requirements ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  color: #444;
+  font-size: 0.9rem;
+}
+
+.stripe-summary-requirements li {
+  margin-bottom: 0.35rem;
+}
+
+.stripe-requirements-help {
+  margin: 0;
+  color: #5f6368;
+  font-size: 0.85rem;
+}
+
+.stripe-campaigns-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.stripe-campaign-item {
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: rgba(248, 250, 252, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stripe-campaign-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.stripe-campaign-header h4 {
+  margin: 0;
+  color: #172b4d;
+}
+
+.stripe-campaign-meta {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.stripe-campaign-flags {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.stripe-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.05);
+  color: #2f4858;
+}
+
+.stripe-chip--ok {
+  background: rgba(45, 106, 79, 0.18);
+  color: #1b4332;
+}
+
+.stripe-chip--pending {
+  background: rgba(214, 40, 40, 0.18);
+  color: #b13a3a;
+}
+
+.stripe-chip--id {
+  background: rgba(15, 76, 129, 0.1);
+  color: #0f4c81;
+}
+
+.stripe-campaign-warning {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #b13a3a;
 }
 
 .notes-form-container {
@@ -585,4 +846,3 @@
     min-width: 120px;
   }
 }
-

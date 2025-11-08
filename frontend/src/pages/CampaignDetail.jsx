@@ -123,6 +123,7 @@ function CampaignDetail() {
   // Check if campaign is visible (only approved campaigns are visible to public)
   const isPending = campaign.status === 'pending'
   const isDraft = campaign.status === 'draft'
+  const stripeReady = !!campaign.stripe_ready
 
   return (
     <div className="campaign-detail">
@@ -214,6 +215,11 @@ function CampaignDetail() {
               <form onSubmit={handleDonate} className="donation-form">
                 <h3>{t('campaign.donate')}</h3>
                 <p className="donation-note">{t('campaign.anonymousDonations')}</p>
+                {!stripeReady && (
+                  <div className="donation-warning">
+                    {t('campaign.stripePending', 'Donations are temporarily disabled until the campaign completes Stripe onboarding.')}
+                  </div>
+                )}
                 <div className="predefined-amounts">
                   {predefinedAmounts.map((amount) => (
                     <button
@@ -238,7 +244,12 @@ function CampaignDetail() {
                 <button
                   type="submit"
                   className="btn-donate"
-                  disabled={processing || !donationAmount || parseFloat(donationAmount || 0) <= 0}
+                  disabled={
+                    processing ||
+                    !donationAmount ||
+                    parseFloat(donationAmount || 0) <= 0 ||
+                    !stripeReady
+                  }
                 >
                   {processing ? t('campaign.processing') : t('campaign.donate')}
                 </button>
