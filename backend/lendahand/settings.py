@@ -1,5 +1,5 @@
 """
-Django settings for lendahand project.
+Django settings for lend-a-hand project.
 """
 
 import os
@@ -154,7 +154,7 @@ if USE_S3_STORAGE:
     # MinIO/S3 storage configuration
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "minioadmin")
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "minioadmin")
-    AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "lendahand-media")
+    AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "lend-a-hand-media")
     AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL", "http://localhost:9000")
     AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", None)
     AWS_S3_USE_SSL = os.getenv("AWS_S3_USE_SSL", "False") == "True"
@@ -188,7 +188,7 @@ else:
             "   - AWS_S3_ENDPOINT_URL (default: http://localhost:9000)\n"
             "   - AWS_ACCESS_KEY_ID (default: minioadmin)\n"
             "   - AWS_SECRET_ACCESS_KEY (default: minioadmin)\n"
-            "   - AWS_STORAGE_BUCKET_NAME (default: lendahand-media)\n"
+            "   - AWS_STORAGE_BUCKET_NAME (default: lend-a-hand-media)\n"
             "\n"
             "If using start-dev.sh, ensure MinIO container is running:\n"
             "  - Docker Desktop must be started\n"
@@ -200,7 +200,7 @@ else:
         )
     else:
         # Allow during database setup operations (no media storage needed)
-        MEDIA_URL = f"{os.getenv('AWS_S3_ENDPOINT_URL', 'http://localhost:9000')}/{os.getenv('AWS_STORAGE_BUCKET_NAME', 'lendahand-media')}/"
+        MEDIA_URL = f"{os.getenv('AWS_S3_ENDPOINT_URL', 'http://localhost:9000')}/{os.getenv('AWS_STORAGE_BUCKET_NAME', 'lend-a-hand-media')}/"
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -232,8 +232,6 @@ CORS_ALLOWED_ORIGINS = (
     else [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "http://test.lendahand.me",
-        "https://test.lendahand.me",
         "http://test.lend-a-hand.me",
         "https://test.lend-a-hand.me",
         "http://dev.lend-a-hand.me",
@@ -319,7 +317,7 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
 EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False") == "False"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@lendahand.me")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@lend-a-hand.me")
 
 # Password Reset Configuration
 PASSWORD_RESET_TIMEOUT = 86400  # 24 hours in seconds

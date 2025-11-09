@@ -6,6 +6,7 @@ from .models import (
     Campaign,
     CampaignMedia,
     Donation,
+    ModerationHistory,
     News,
     NewsMedia,
     User,
@@ -22,13 +23,25 @@ class UserSerializer(serializers.ModelSerializer):
             "id",
             "email",
             "username",
+            "first_name",
+            "last_name",
             "phone",
             "address",
             "is_moderator",
             "is_staff",
+            "is_active",
+            "date_joined",
+            "last_login",
             "stripe",
         ]
-        read_only_fields = ["id", "is_moderator", "is_staff"]
+        read_only_fields = [
+            "id",
+            "is_moderator",
+            "is_staff",
+            "is_active",
+            "date_joined",
+            "last_login",
+        ]
 
     def get_stripe(self, obj):
         try:
@@ -132,12 +145,22 @@ class CampaignMediaSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
+class ModerationHistorySerializer(serializers.ModelSerializer):
+    moderator = UserSerializer(read_only=True)
+
+    class Meta:
+        model = ModerationHistory
+        fields = ["id", "action", "notes", "created_at", "moderator"]
+        read_only_fields = ["id", "created_at", "moderator"]
+
+
 class CampaignSerializer(serializers.ModelSerializer):
     media = CampaignMediaSerializer(many=True, read_only=True)
     created_by = UserSerializer(read_only=True)
     progress_percentage = serializers.ReadOnlyField()
     stripe_ready = serializers.ReadOnlyField()
     stripe_account_id = serializers.SerializerMethodField()
+    moderation_history = serializers.SerializerMethodField()
 
     class Meta:
         model = Campaign
@@ -157,6 +180,7 @@ class CampaignSerializer(serializers.ModelSerializer):
             "moderation_notes",
             "stripe_ready",
             "stripe_account_id",
+            "moderation_history",
         ]
         read_only_fields = [
             "id",
@@ -169,9 +193,30 @@ class CampaignSerializer(serializers.ModelSerializer):
         ]
 
     def get_stripe_account_id(self, obj):
-        if obj.stripe_account:
-            return obj.stripe_account.stripe_account_id
-        return None
+        try:
+            account = obj.created_by.stripe_account
+        except UserStripeAccount.DoesNotExist:
+            return None
+        return account.stripe_account_id
+
+    def get_moderation_history(self, obj):
+        include_history = self.context.get("include_history", False)
+        if not include_history:
+            return []
+
+        history_qs = getattr(obj, "moderation_history", None)
+        if history_qs is None:
+            return []
+
+        serializer = ModerationHistorySerializer(
+            history_qs.all(), many=True, context=self.context
+        )
+        return serializer.data
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.context.get("include_history", False):
+            self.fields.pop("moderation_history", None)
 
 
 class CampaignCreateSerializer(serializers.ModelSerializer):

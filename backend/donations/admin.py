@@ -9,6 +9,7 @@ from .models import (
     News,
     NewsMedia,
     User,
+    UserStripeAccount,
 )
 
 
@@ -61,6 +62,33 @@ class ModerationHistoryAdmin(admin.ModelAdmin):
     list_display = ["campaign", "moderator", "action", "created_at"]
     list_filter = ["action", "created_at"]
     readonly_fields = ["created_at"]
+
+
+@admin.register(UserStripeAccount)
+class UserStripeAccountAdmin(admin.ModelAdmin):
+    list_display = [
+        "user",
+        "stripe_account_id",
+        "charges_enabled",
+        "payouts_enabled",
+        "details_submitted",
+        "last_synced_at",
+    ]
+    list_filter = ["charges_enabled", "payouts_enabled", "details_submitted"]
+    search_fields = ["user__email", "user__username", "stripe_account_id"]
+    readonly_fields = [
+        "user",
+        "stripe_account_id",
+        "charges_enabled",
+        "payouts_enabled",
+        "details_submitted",
+        "requirements_due",
+        "onboarding_url",
+        "onboarding_expires_at",
+        "last_synced_at",
+        "created_at",
+        "updated_at",
+    ]
 
 
 class NewsMediaInline(admin.TabularInline):

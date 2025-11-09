@@ -1,0 +1,11 @@
+=== Title ===
+Mental Health Support
+
+=== Short Description ===
+Counseling and psychological support services
+
+=== Description (HTML) ===
+<p>Trauma counseling is essential for those affected by conflict and displacement. This fund supports mental health professionals.</p>
+
+=== Target Amount ===
+25000

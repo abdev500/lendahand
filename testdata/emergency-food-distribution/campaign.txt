@@ -1,0 +1,11 @@
+=== Title ===
+Emergency Food Distribution
+
+=== Short Description ===
+Providing meals to those in need
+
+=== Description (HTML) ===
+<p>Food security is critical. This campaign supports food distribution centers in affected areas.</p>
+
+=== Target Amount ===
+40000

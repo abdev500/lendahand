@@ -30,6 +30,7 @@ class UserStripeAccount(models.Model):
     requirements_due = models.JSONField(default=list, blank=True)
     onboarding_url = models.URLField(blank=True)
     onboarding_expires_at = models.DateTimeField(null=True, blank=True)
+    dashboard_url = models.URLField(blank=True)
     last_synced_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -57,6 +58,7 @@ class UserStripeAccount(models.Model):
             "payouts_enabled",
             "details_submitted",
             "requirements_due",
+            "dashboard_url",
             "updated_at",
         ]
         if self.is_ready and (self.onboarding_url or self.onboarding_expires_at):
@@ -88,13 +90,6 @@ class Campaign(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     moderation_notes = models.TextField(blank=True)
-    stripe_account = models.ForeignKey(
-        UserStripeAccount,
-        on_delete=models.SET_NULL,
-        related_name="campaigns",
-        null=True,
-        blank=True,
-    )
     stripe_ready = models.BooleanField(default=False)
 
     class Meta:

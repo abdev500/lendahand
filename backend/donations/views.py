@@ -8,7 +8,7 @@ from django.db.models import Q
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import permissions, status, viewsets
+from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -93,6 +93,10 @@ def sync_user_stripe_account(user_account):
     return user_account
 
 
+class UserActivationSerializer(serializers.Serializer):
+    is_active = serializers.BooleanField()
+
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -100,13 +104,32 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.request.user.is_moderator or self.request.user.is_staff:
-            return User.objects.all()
+            return User.objects.all().order_by("-date_joined")
         return User.objects.filter(id=self.request.user.id)
 
     @action(detail=False, methods=["get"])
     def me(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+
+    @action(detail=True, methods=["post"], url_path="set-active")
+    def set_active(self, request, pk=None):
+        if not (request.user.is_moderator or request.user.is_staff):
+            raise PermissionDenied("Only moderators and staff can modify user activation status.")
+
+        serializer = UserActivationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        target_user = self.get_object()
+        if target_user == request.user:
+            raise ValidationError({"is_active": "You cannot change your own activation status."})
+
+        new_status = serializer.validated_data["is_active"]
+        if target_user.is_active != new_status:
+            target_user.is_active = new_status
+            target_user.save(update_fields=["is_active"])
+
+        return Response(self.get_serializer(target_user).data)
 
     @action(detail=False, methods=["post"])
     def change_password(self, request):
@@ -193,6 +216,24 @@ class UserViewSet(viewsets.ModelViewSet):
         except stripe.error.StripeError as exc:
             logger.warning("Unable to sync Stripe account %s during status check: %s", account.stripe_account_id, exc)
 
+        Campaign.objects.filter(created_by=request.user).update(stripe_ready=account.is_ready)
+
+        dashboard_url = account.dashboard_url or ""
+        if account.stripe_account_id:
+            try:
+                login_link = stripe.Account.create_login_link(account.stripe_account_id)
+                dashboard_url = login_link.get("url", "") or dashboard_url
+            except stripe.error.StripeError as exc:
+                logger.warning(
+                    "Unable to generate dashboard link for account %s: %s",
+                    account.stripe_account_id,
+                    exc,
+                )
+            else:
+                if dashboard_url and dashboard_url != account.dashboard_url:
+                    account.dashboard_url = dashboard_url
+                    account.save(update_fields=["dashboard_url", "updated_at"])
+
         return Response(
             {
                 "has_account": True,
@@ -206,6 +247,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 "onboarding_expires_at": account.onboarding_expires_at.isoformat()
                 if account.onboarding_expires_at
                 else None,
+                "dashboard_url": dashboard_url or None,
             }
         )
 
@@ -409,6 +451,16 @@ class CampaignViewSet(viewsets.ModelViewSet):
             return CampaignCreateSerializer
         return CampaignSerializer
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        include_history = (
+            self.request.query_params.get("include_history", "").lower() == "true"
+            if hasattr(self.request, "query_params")
+            else False
+        )
+        context["include_history"] = include_history
+        return context
+
     def get_queryset(self):
         queryset = Campaign.objects.all()
         status_filter = self.request.query_params.get("status", None)
@@ -425,7 +477,12 @@ class CampaignViewSet(viewsets.ModelViewSet):
         if status_filter:
             queryset = queryset.filter(status=status_filter)
 
-        return queryset.select_related("created_by", "stripe_account").prefetch_related("media", "donations")
+        queryset = queryset.select_related("created_by").prefetch_related("media", "donations")
+
+        if self.request.query_params.get("include_history", "").lower() == "true":
+            queryset = queryset.prefetch_related("moderation_history__moderator")
+
+        return queryset
 
     def perform_create(self, serializer):
         campaign = serializer.save()
@@ -455,10 +512,9 @@ class CampaignViewSet(viewsets.ModelViewSet):
                 exc,
             )
 
-        campaign.stripe_account = stripe_account
         campaign.stripe_ready = stripe_account.is_ready
 
-        update_fields = ["stripe_account", "stripe_ready", "updated_at"]
+        update_fields = ["stripe_ready", "updated_at"]
         if not stripe_account.is_ready and campaign.status != "draft":
             campaign.status = "draft"
             update_fields.append("status")
@@ -674,17 +730,18 @@ class DonationViewSet(viewsets.ModelViewSet):
         except Campaign.DoesNotExist:
             return Response({"error": "Campaign not found or not approved"}, status=status.HTTP_404_NOT_FOUND)
 
-        if not campaign.stripe_account:
-            logger.error("Campaign %s has no associated Stripe account", campaign.id)
+        user_account = get_user_stripe_account(campaign.created_by)
+        if not user_account:
+            logger.error("Campaign %s has no associated Stripe account via creator", campaign.id)
             return Response(
                 {"error": "Campaign is not ready to accept donations. Please try again later."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
-            stripe_account = sync_user_stripe_account(campaign.stripe_account)
+            stripe_account = sync_user_stripe_account(user_account)
         except stripe.error.StripeError as exc:
-            logger.error("Stripe error syncing account %s: %s", campaign.stripe_account.stripe_account_id, exc)
+            logger.error("Stripe error syncing account %s: %s", user_account.stripe_account_id, exc)
             return Response(
                 {"error": "Unable to prepare payment at this time. Please try again later."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -920,7 +977,7 @@ def stripe_webhook(request):
                 logger.warning("Received account.updated for unknown account %s", account_id)
             else:
                 user_account.update_from_stripe_account(account_data)
-                Campaign.objects.filter(stripe_account=user_account).update(
+                Campaign.objects.filter(created_by=user_account.user).update(
                     stripe_ready=user_account.is_ready
                 )
     elif event["type"] == "capability.updated":
@@ -939,7 +996,7 @@ def stripe_webhook(request):
                     user_account = sync_user_stripe_account(user_account)
                 except stripe.error.StripeError as exc:
                     logger.error("Unable to sync account %s after capability update: %s", account_id, exc)
-                Campaign.objects.filter(stripe_account=user_account).update(
+                Campaign.objects.filter(created_by=user_account.user).update(
                     stripe_ready=user_account.is_ready
                 )
 
