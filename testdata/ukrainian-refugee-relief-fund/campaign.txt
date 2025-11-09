@@ -1,0 +1,11 @@
+=== Title ===
+Ukrainian Refugee Relief Fund
+
+=== Short Description ===
+Emergency support for Ukrainian refugees
+
+=== Description (HTML) ===
+<p>As the conflict continues, millions of Ukrainians have been displaced. This fund provides immediate relief for refugees including housing, food, and essential supplies.</p>
+
+=== Target Amount ===
+100000

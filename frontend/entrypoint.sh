@@ -3,12 +3,14 @@ set -e
 
 # Default API URL if not provided
 API_URL=${REACT_APP_API_URL:-/api}
+ADMIN_URL=${REACT_APP_ADMIN_URL:-}
 
 # Create runtime config file that can be loaded by the app
 # This file is served by nginx and loaded before the main app
 cat > /usr/share/nginx/html/config.js <<EOF
 window.__RUNTIME_CONFIG__ = {
-  REACT_APP_API_URL: "${API_URL}"
+  REACT_APP_API_URL: "${API_URL}",
+  REACT_APP_ADMIN_URL: "${ADMIN_URL}"
 };
 EOF
 

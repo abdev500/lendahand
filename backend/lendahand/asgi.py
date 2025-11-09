@@ -1,5 +1,5 @@
 """
-ASGI config for lendahand project.
+ASGI config for lend-a-hand project.
 """
 
 import os

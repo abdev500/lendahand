@@ -2,6 +2,7 @@
 Custom storage backend for MinIO S3-compatible storage.
 Generates URLs that point to Django backend for serving files.
 """
+
 from django.conf import settings
 from django.urls import reverse
 from storages.backends.s3boto3 import S3Boto3Storage
@@ -30,6 +31,6 @@ class MinIOStorage(S3Boto3Storage):
         # Generate Django media URL instead of direct MinIO URL
         # Use /api/media/ prefix to route through Django
         # Remove any leading slashes from name to avoid double slashes
-        clean_name = name.lstrip('/')
+        clean_name = name.lstrip("/")
         media_url = f"/api/media/{clean_name}"
         return media_url

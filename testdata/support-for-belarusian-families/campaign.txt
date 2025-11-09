@@ -1,0 +1,11 @@
+=== Title ===
+Support for Belarusian Families
+
+=== Short Description ===
+Helping families affected by political unrest in Belarus
+
+=== Description (HTML) ===
+<p>This campaign aims to provide financial assistance to families who have been affected by the ongoing political situation in Belarus. Your donations will help cover basic needs such as food, housing, and medical expenses.</p><p>We work directly with local organizations to ensure that funds reach those who need it most.</p>
+
+=== Target Amount ===
+50000

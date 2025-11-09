@@ -1,0 +1,11 @@
+=== Title ===
+Children's Safety Fund
+
+=== Short Description ===
+Protecting the most vulnerable
+
+=== Description (HTML) ===
+<p>Children need safe spaces and protection. This fund supports child protection programs.</p>
+
+=== Target Amount ===
+35000

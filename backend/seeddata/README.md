@@ -5,9 +5,8 @@ This folder contains all seed data and scripts for populating the database with 
 ## Structure
 
 - `users.json` - User accounts to create (email, password, username, roles, permissions)
-- `campaigns.json` - Campaign data (title, description, target amount, status, images)
 - `news.json` - News article data (title, content, published status, images)
-- `images/` - Image files used for campaigns and news
+- `images/` - Image files used for news articles
 - `seed.py` - Python script that uses the REST API to populate the database
 
 ## Usage
@@ -21,7 +20,7 @@ This folder contains all seed data and scripts for populating the database with 
 This will:
 1. Start Django server
 2. Run the `seed.py` script to populate data via REST API
-3. Create test users, campaigns, and news articles
+3. Create test users and news articles
 
 ### Direct Usage
 
@@ -48,28 +47,26 @@ python3 seeddata/seed.py --help
 
 1. **Login as admin and moderator** (created by `setup-db.sh`)
 2. **Load regular users** from `users.json` and create them via API
-3. **Distribute campaigns** among users who have `creates_campaigns: true`
-4. **Create news** using admin/moderator accounts (created by `setup-db.sh`)
+3. **Create news** using admin/moderator accounts (created by `setup-db.sh`)
 
 ## API Endpoints Used
 
 - `POST /api/auth/register/` - Register users
 - `POST /api/auth/login/` - Login and get token
-- `POST /api/campaigns/` - Create campaigns
 - `POST /api/news/` - Create news articles
 
 ## Test Accounts
 
 ### Created by setup-db.sh
 
-- **Admin**: `admin@lendahand.me` / `admin` (superuser, moderator)
-- **Moderator**: `moderator@lendahand.me` / `moderator` (moderator)
+- **Admin**: `admin@lend-a-hand.me` / `admin` (superuser, moderator)
+- **Moderator**: `moderator@lend-a-hand.me` / `moderator` (moderator)
 
 ### Created by seed process (via API)
 
-- **User1**: `user1@example.com` / `User1Pass123!` (regular user, creates campaigns)
-- **User2**: `user2@example.com` / `User2Pass123!` (regular user, creates campaigns)
-- **User**: `user@example.com` / `TestUser123!` (regular user, creates campaigns)
+- **User1**: `user1@example.com` / `User1Pass123!` (regular user)
+- **User2**: `user2@example.com` / `User2Pass123!` (regular user)
+- **User**: `user@example.com` / `TestUser123!` (regular user)
 
 **Note**: Admin and moderator accounts are created by `setup-db.sh` during database setup, not via the API seeding process.
 

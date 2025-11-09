@@ -4,6 +4,57 @@ import { useEffect, useState, useRef } from 'react'
 import api from '../api/axios'
 import './Header.css'
 
+const getAdminURL = () => {
+  if (typeof window === 'undefined') {
+    return '/admin/'
+  }
+
+  const runtimeConfig = window.__RUNTIME_CONFIG__ || {}
+  const runtimeAdminUrl = runtimeConfig.REACT_APP_ADMIN_URL
+
+  const buildAbsoluteAdminURL = (candidate) => {
+    const candidateURL = new URL(candidate, window.location.origin)
+    const pathSegments = candidateURL.pathname.split('/').filter(Boolean)
+
+    if (pathSegments.length && pathSegments[pathSegments.length - 1] === 'api') {
+      pathSegments.pop()
+    }
+
+    pathSegments.push('admin')
+    candidateURL.pathname = `/${pathSegments.join('/')}/`
+    candidateURL.search = ''
+    candidateURL.hash = ''
+    return candidateURL.toString()
+  }
+
+  try {
+    if (runtimeAdminUrl) {
+      return buildAbsoluteAdminURL(runtimeAdminUrl)
+    }
+
+    const runtimeApiUrl = runtimeConfig.REACT_APP_API_URL
+    if (runtimeApiUrl) {
+      return buildAbsoluteAdminURL(runtimeApiUrl)
+    }
+
+    const defaultBase = api.defaults.baseURL || '/api'
+    if (defaultBase.startsWith('http://') || defaultBase.startsWith('https://')) {
+      return buildAbsoluteAdminURL(defaultBase)
+    }
+
+    const hostname = window.location.hostname
+    const isLocalhost = ['localhost', '127.0.0.1'].includes(hostname)
+    if (isLocalhost) {
+      return `${window.location.protocol}//localhost:8000/admin/`
+    }
+
+    return `${window.location.origin.replace(/\/$/, '')}/admin/`
+  } catch (error) {
+    console.error('[Header] Failed to resolve admin URL:', error)
+    return '/admin/'
+  }
+}
+
 function Header() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
@@ -11,6 +62,7 @@ function Header() {
   const [user, setUser] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [adminURL, setAdminURL] = useState('/admin/')
   const dropdownRef = useRef(null)
 
   useEffect(() => {
@@ -35,6 +87,25 @@ function Header() {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [dropdownOpen])
+
+  useEffect(() => {
+    // Compute admin URL immediately and refresh shortly after to catch late config updates
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const updateAdminURL = () => {
+      setAdminURL(getAdminURL())
+    }
+
+    updateAdminURL()
+
+    const timeoutIds = [setTimeout(updateAdminURL, 100), setTimeout(updateAdminURL, 500)]
+
+    return () => {
+      timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId))
+    }
+  }, [])
 
   const checkAuth = async () => {
     let token = null
@@ -172,7 +243,13 @@ function Header() {
                         {t('nav.settings')}
                       </Link>
                       {user?.is_staff && (
-                        <a href="/admin/" target="_blank" onClick={() => setDropdownOpen(false)} className="dropdown-item">
+                        <a
+                          href={adminURL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setDropdownOpen(false)}
+                          className="dropdown-item"
+                        >
                           <span className="dropdown-icon">⚙️</span>
                           {t('nav.admin')}
                         </a>

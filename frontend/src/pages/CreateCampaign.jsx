@@ -11,6 +11,7 @@ function CreateCampaign() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [formData, setFormData] = useState({
     title: '',
     short_description: '',
@@ -56,6 +57,7 @@ function CreateCampaign() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setInfo('')
     setLoading(true)
 
     try {
@@ -71,13 +73,32 @@ function CreateCampaign() {
       })
 
       const response = await api.post('/campaigns/', formDataToSend)
+      const campaignId = response.data.id
 
-      // Redirect to dashboard with success message
-      navigate('/dashboard?campaign_created=true&campaign_id=' + response.data.id)
+      try {
+        const onboardingResponse = await api.post('/users/stripe/onboard/')
+        const onboardingData = onboardingResponse.data || {}
+
+        if (onboardingData.stripe_ready) {
+          navigate(`/dashboard?campaign_created=true&campaign_id=${campaignId}`)
+          return
+        }
+
+        if (onboardingData.onboarding_url) {
+          setInfo(t('campaign.stripeOnboardingRedirect', 'Redirecting to Stripe to finish onboarding...'))
+          window.location.href = onboardingData.onboarding_url
+          return
+        }
+
+        navigate(`/dashboard?campaign_created=true&campaign_id=${campaignId}&stripe_pending=true`)
+      } catch (stripeError) {
+        console.error('Error initiating Stripe onboarding:', stripeError)
+        navigate(`/dashboard?campaign_created=true&campaign_id=${campaignId}&stripe_error=true`)
+      }
     } catch (err) {
       console.error('Error creating campaign:', err)
       let errorMessage = t('campaign.error')
-      
+
       if (err.response?.data) {
         const data = err.response.data
         if (typeof data === 'string') {
@@ -91,8 +112,9 @@ function CreateCampaign() {
       } else if (err.message) {
         errorMessage = err.message
       }
-      
+
       setError(errorMessage)
+    } finally {
       setLoading(false)
     }
   }
@@ -102,6 +124,7 @@ function CreateCampaign() {
       <div className="container">
         <h1>{t('campaign.create')}</h1>
         {error && <div className="error-message">{error}</div>}
+        {info && <div className="info-message">{info}</div>}
         <form onSubmit={handleSubmit} className="campaign-form">
           <div className="form-group">
             <label htmlFor="title">{t('campaign.title')} *</label>
@@ -182,4 +205,3 @@ function CreateCampaign() {
 }
 
 export default CreateCampaign
-
