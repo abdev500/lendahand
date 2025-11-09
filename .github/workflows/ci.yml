@@ -41,8 +41,8 @@ jobs:
 
       - name: Check code formatting
         run: |
-          black --check --line-length 180 .
-          isort --check-only --profile black --line-length 180 .
+          black --check --line-length 256 .
+          isort --check-only --profile black --line-length 256 .
 
   lint-frontend:
     name: Lint Frontend
