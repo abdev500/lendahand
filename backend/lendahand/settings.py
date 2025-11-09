@@ -145,10 +145,8 @@ USE_S3_STORAGE = os.getenv("USE_S3_STORAGE", "False") == "True"
 # Check if we're running database setup operations (makemigrations, migrate, createsuperuser)
 # These operations don't need MinIO storage and should be allowed to run
 import sys
-IS_DB_SETUP = any(
-    cmd in sys.argv
-    for cmd in ["makemigrations", "migrate", "createsuperuser", "shell", "dbshell"]
-)
+
+IS_DB_SETUP = any(cmd in sys.argv for cmd in ["makemigrations", "migrate", "createsuperuser", "shell", "dbshell"])
 
 if USE_S3_STORAGE:
     # MinIO/S3 storage configuration

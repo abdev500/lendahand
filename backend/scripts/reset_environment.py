@@ -150,10 +150,7 @@ def main():
     args = parse_arguments()
 
     if not args.noinput:
-        confirm = input(
-            "This will DELETE all data in the database and MinIO bucket. "
-            "Type 'reset' to continue: "
-        )
+        confirm = input("This will DELETE all data in the database and MinIO bucket. " "Type 'reset' to continue: ")
         if confirm.strip().lower() != "reset":
             print("Aborted.")
             return
