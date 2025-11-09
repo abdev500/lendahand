@@ -41,8 +41,8 @@ jobs:
 
       - name: Check code formatting
         run: |
-          black --check --config ../pyproject.toml --exclude 'migrations/'
-          isort --check-only --settings-path ../pyproject.toml --skip-glob '*/migrations/*'
+          black --check --config ../pyproject.toml --exclude 'migrations/' .
+          isort --check-only --settings-path ../pyproject.toml --skip-glob '*/migrations/*' .
 
   lint-frontend:
     name: Lint Frontend
