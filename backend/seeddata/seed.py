@@ -285,21 +285,21 @@ Examples:
 
 Environment Variables:
   API_BASE_URL       API base URL (overridden by --api-url)
-        """.strip()
+        """.strip(),
     )
 
     parser.add_argument(
         "--api-url",
         type=str,
         default=os.getenv("API_BASE_URL", "http://localhost:8000/api"),
-        help="API base URL (default: http://localhost:8000/api or API_BASE_URL env var)"
+        help="API base URL (default: http://localhost:8000/api or API_BASE_URL env var)",
     )
 
     args = parser.parse_args()
 
     # Validate API URL
-    api_url = args.api_url.rstrip('/')
-    if not api_url.startswith(('http://', 'https://')):
+    api_url = args.api_url.rstrip("/")
+    if not api_url.startswith(("http://", "https://")):
         print(f"✗ Error: API URL must start with http:// or https://")
         print(f"  Provided: {api_url}")
         sys.exit(1)
@@ -313,6 +313,7 @@ Environment Variables:
     except Exception as e:
         print(f"\n\n✗ Error during seeding: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

@@ -1,21 +1,23 @@
 .PHONY: lint format check test clean
 
+PYTHON ?= python3
+
 # Linting
 lint:
 	@echo "Running flake8..."
-	flake8 --config=setup.cfg backend/
+	$(PYTHON) -m flake8 --config=setup.cfg backend/
 	@echo "Running black check..."
-	black --check --line-length 120 backend/
+	$(PYTHON) -m black --check --line-length 120 backend/
 	@echo "Running isort check..."
-	isort --check --profile black --line-length 120 backend/
+	$(PYTHON) -m isort --check --profile black --line-length 120 backend/
 	@echo "✅ All lint checks passed!"
 
 # Format code
 format:
 	@echo "Formatting with black..."
-	black --line-length 120 backend/
+	$(PYTHON) -m black --line-length 120 backend/
 	@echo "Sorting imports with isort..."
-	isort --profile black --line-length 120 backend/
+	$(PYTHON) -m isort --profile black --line-length 120 backend/
 	@echo "✅ Code formatted!"
 
 # Run all checks

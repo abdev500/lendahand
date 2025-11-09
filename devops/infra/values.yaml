@@ -9,7 +9,7 @@ postgresql:
     #tag: "16.4"
   auth:
     username: postgres
-    database: getdonate
+    database: lend-a-hand
     password: postgres   # use a secret for prod
   primary:
     containerSecurityContext:

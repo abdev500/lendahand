@@ -14,3 +14,6 @@ dj-database-url==2.1.0
 django-storages==1.14.2
 boto3==1.35.0
 requests>=2.31.0
+flake8==6.1.0
+black==23.12.1
+isort==5.13.2

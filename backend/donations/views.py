@@ -1,7 +1,8 @@
 import logging
+from datetime import datetime
+from datetime import timezone as dt_timezone
 
 import stripe
-from datetime import datetime, timezone as dt_timezone
 from django.conf import settings
 from django.contrib.auth import logout
 from django.db.models import Q
@@ -244,9 +245,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 "details_submitted": account.details_submitted,
                 "requirements_due": account.requirements_due,
                 "onboarding_url": account.onboarding_url,
-                "onboarding_expires_at": account.onboarding_expires_at.isoformat()
-                if account.onboarding_expires_at
-                else None,
+                "onboarding_expires_at": (
+                    account.onboarding_expires_at.isoformat() if account.onboarding_expires_at else None
+                ),
                 "dashboard_url": dashboard_url or None,
             }
         )
@@ -330,11 +331,11 @@ def password_reset_request(request):
     """
     Request password reset - sends email with reset link.
     """
-    from django.contrib.auth.tokens import default_token_generator
-    from django.utils.http import urlsafe_base64_encode
-    from django.utils.encoding import force_bytes
-    from django.core.mail import send_mail
     from django.conf import settings
+    from django.contrib.auth.tokens import default_token_generator
+    from django.core.mail import send_mail
+    from django.utils.encoding import force_bytes
+    from django.utils.http import urlsafe_base64_encode
 
     serializer = PasswordResetRequestSerializer(data=request.data)
     if not serializer.is_valid():
@@ -402,8 +403,8 @@ def password_reset_confirm(request):
     Confirm password reset with token.
     """
     from django.contrib.auth.tokens import default_token_generator
-    from django.utils.http import urlsafe_base64_decode
     from django.utils.encoding import force_str
+    from django.utils.http import urlsafe_base64_decode
 
     serializer = PasswordResetConfirmSerializer(data=request.data)
     if not serializer.is_valid():
@@ -470,9 +471,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(status="approved", stripe_ready=True)
         elif not (self.request.user.is_moderator or self.request.user.is_staff):
             # Regular users see approved, Stripe-ready campaigns plus their own
-            queryset = queryset.filter(
-                Q(status="approved", stripe_ready=True) | Q(created_by=self.request.user)
-            )
+            queryset = queryset.filter(Q(status="approved", stripe_ready=True) | Q(created_by=self.request.user))
 
         if status_filter:
             queryset = queryset.filter(status=status_filter)
@@ -542,9 +541,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def suspend(self, request, pk=None):
         campaign = self.get_object()
-        if campaign.created_by != request.user and not (
-            request.user.is_moderator or request.user.is_staff
-        ):
+        if campaign.created_by != request.user and not (request.user.is_moderator or request.user.is_staff):
             return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
         campaign.status = "suspended"
         campaign.save()
@@ -977,9 +974,7 @@ def stripe_webhook(request):
                 logger.warning("Received account.updated for unknown account %s", account_id)
             else:
                 user_account.update_from_stripe_account(account_data)
-                Campaign.objects.filter(created_by=user_account.user).update(
-                    stripe_ready=user_account.is_ready
-                )
+                Campaign.objects.filter(created_by=user_account.user).update(stripe_ready=user_account.is_ready)
     elif event["type"] == "capability.updated":
         capability_data = event["data"]["object"]
         account_id = capability_data.get("account")
@@ -996,9 +991,7 @@ def stripe_webhook(request):
                     user_account = sync_user_stripe_account(user_account)
                 except stripe.error.StripeError as exc:
                     logger.error("Unable to sync account %s after capability update: %s", account_id, exc)
-                Campaign.objects.filter(created_by=user_account.user).update(
-                    stripe_ready=user_account.is_ready
-                )
+                Campaign.objects.filter(created_by=user_account.user).update(stripe_ready=user_account.is_ready)
 
     return Response({"status": "success"})
 
@@ -1042,10 +1035,10 @@ def serve_media(request, file_path):
     URL format: /api/media/<file_path>
     Example: /api/media/campaigns/image.jpg
     """
-    from django.conf import settings
-    from django.http import StreamingHttpResponse, Http404
     import boto3
     from botocore.exceptions import ClientError
+    from django.conf import settings
+    from django.http import Http404, StreamingHttpResponse
 
     # Only serve media if S3 storage is enabled
     if not settings.USE_S3_STORAGE:
@@ -1054,10 +1047,10 @@ def serve_media(request, file_path):
     try:
         # Connect to MinIO
         s3_client = boto3.client(
-            's3',
+            "s3",
             endpoint_url=settings.AWS_S3_ENDPOINT_URL,
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         )
 
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME
@@ -1066,29 +1059,29 @@ def serve_media(request, file_path):
         try:
             obj = s3_client.get_object(Bucket=bucket_name, Key=file_path)
         except ClientError as e:
-            error_code = e.response.get('Error', {}).get('Code', '')
-            if error_code == 'NoSuchKey':
+            error_code = e.response.get("Error", {}).get("Code", "")
+            if error_code == "NoSuchKey":
                 raise Http404("File not found")
             logger.error(f"Error accessing file {file_path}: {e}")
             raise Http404("Error accessing file")
 
         # Determine content type
-        content_type = obj.get('ContentType', 'application/octet-stream')
+        content_type = obj.get("ContentType", "application/octet-stream")
 
         # Stream the file content
         def file_iterator():
-            for chunk in obj['Body'].iter_chunks(chunk_size=8192):
+            for chunk in obj["Body"].iter_chunks(chunk_size=8192):
                 yield chunk
 
         # Create streaming response
         response = StreamingHttpResponse(file_iterator(), content_type=content_type)
 
         # Set cache headers
-        response['Cache-Control'] = 'public, max-age=86400'  # Cache for 1 day
+        response["Cache-Control"] = "public, max-age=86400"  # Cache for 1 day
 
         # Set content length if available
-        if 'ContentLength' in obj:
-            response['Content-Length'] = str(obj['ContentLength'])
+        if "ContentLength" in obj:
+            response["Content-Length"] = str(obj["ContentLength"])
 
         return response
 

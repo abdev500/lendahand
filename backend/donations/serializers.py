@@ -208,9 +208,7 @@ class CampaignSerializer(serializers.ModelSerializer):
         if history_qs is None:
             return []
 
-        serializer = ModerationHistorySerializer(
-            history_qs.all(), many=True, context=self.context
-        )
+        serializer = ModerationHistorySerializer(history_qs.all(), many=True, context=self.context)
         return serializer.data
 
     def __init__(self, *args, **kwargs):
