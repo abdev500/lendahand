@@ -1,0 +1,11 @@
+=== Title ===
+Medical Equipment for Hospitals
+
+=== Short Description ===
+Supporting healthcare facilities with critical equipment
+
+=== Description (HTML) ===
+<p>Hospitals in affected regions are in urgent need of medical equipment. Your donation helps purchase vital supplies.</p>
+
+=== Target Amount ===
+75000

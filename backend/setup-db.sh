@@ -31,8 +31,8 @@ if [ "$SHOW_HELP" = true ]; then
     echo "  Sets up the database by:"
     echo "    - Creating/updating database migrations"
     echo "    - Running migrations"
-    echo "    - Creating initial superuser account (admin@lendahand.me)"
-    echo "    - Creating moderator account (moderator@lendahand.me)"
+    echo "    - Creating initial superuser account (admin@lend-a-hand.me)"
+    echo "    - Creating moderator account (moderator@lend-a-hand.me)"
     echo ""
     echo "  Note: Python environment setup (venv, dependencies) is handled by start-dev.sh"
     echo ""
@@ -67,14 +67,14 @@ python manage.py migrate
 echo "Creating superuser..."
 python manage.py shell << PYTHON_EOF
 from donations.models import User
-if not User.objects.filter(email='admin@lendahand.me').exists():
+if not User.objects.filter(email='admin@lend-a-hand.me').exists():
     user = User.objects.create_superuser(
-        email='admin@lendahand.me',
+        email='admin@lend-a-hand.me',
         username='admin',
         password='admin',
         is_moderator=True
     )
-    print('Superuser created: admin@lendahand.me / admin')
+    print('Superuser created: admin@lend-a-hand.me / admin')
 else:
     print('Superuser already exists')
 PYTHON_EOF
@@ -83,14 +83,14 @@ PYTHON_EOF
 echo "Creating moderator user..."
 python manage.py shell << PYTHON_EOF
 from donations.models import User
-if not User.objects.filter(email='moderator@lendahand.me').exists():
+if not User.objects.filter(email='moderator@lend-a-hand.me').exists():
     user = User.objects.create_user(
-        email='moderator@lendahand.me',
+        email='moderator@lend-a-hand.me',
         username='moderator',
         password='moderator',
         is_moderator=True
     )
-    print('Moderator created: moderator@lendahand.me / moderator')
+    print('Moderator created: moderator@lend-a-hand.me / moderator')
 else:
     print('Moderator already exists')
 PYTHON_EOF
@@ -99,8 +99,8 @@ echo ""
 echo "=========================================="
 echo "Database setup complete!"
 echo "=========================================="
-echo "Admin:    admin@lendahand.me / admin"
-echo "Moderator: moderator@lendahand.me / moderator"
+echo "Admin:    admin@lend-a-hand.me / admin"
+echo "Moderator: moderator@lend-a-hand.me / moderator"
 echo ""
 echo "Next steps:"
 echo "  1. Start Django server: python manage.py runserver"

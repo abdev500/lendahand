@@ -104,42 +104,6 @@ class SeederAPI:
             print(f"✗ Registration failed: {response.status_code} - {response.text}")
             return False
 
-    def create_campaign(self, campaign_data, image_files=None):
-        """Create a campaign via API."""
-        url = f"{self.base_url}/campaigns/"
-
-        # Prepare form data
-        data = {
-            "title": campaign_data["title"],
-            "short_description": campaign_data["short_description"],
-            "description": campaign_data["description"],
-            "target_amount": campaign_data["target_amount"],
-            "status": campaign_data.get("status", "pending"),
-        }
-
-        # Prepare files for upload
-        files = []
-        if image_files:
-            for img_file in image_files:
-                if img_file.exists():
-                    files.append(("media_files", (img_file.name, open(img_file, "rb"), "image/jpeg")))
-
-        if files:
-            response = self.session.post(url, data=data, files=files)
-            # Close file handles
-            for _, (_, file_handle, _) in files:
-                file_handle.close()
-        else:
-            response = self.session.post(url, json=data)
-
-        if response.status_code in [200, 201]:
-            campaign = response.json()
-            print(f"✓ Created campaign: {campaign_data['title']}")
-            return campaign
-        else:
-            print(f"✗ Failed to create campaign '{campaign_data['title']}': {response.status_code} - {response.text}")
-            return None
-
     def create_news(self, news_data, image_files=None):
         """Create a news article via API."""
         url = f"{self.base_url}/news/"
@@ -204,12 +168,11 @@ def seed_data(api_base_url):
         return False
 
     # Filter out admin and moderator (created by setup-db.sh)
-    admin_emails = ["admin@lendahand.me", "moderator@lendahand.me"]
+    admin_emails = ["admin@lend-a-hand.me", "moderator@lend-a-hand.me"]
     regular_users_data = [u for u in users_data if u["email"] not in admin_emails]
 
     # Store user APIs and metadata
     user_apis = {}
-    users_for_campaigns = []  # Users that can create campaigns
 
     # Login as admin and moderator for news creation (created by setup-db.sh)
     admin_api = SeederAPI(api_base_url)
@@ -217,13 +180,13 @@ def seed_data(api_base_url):
     users_for_news = []  # Users that can create news
 
     print("Step 2: Logging in as admin and moderator (created by setup-db.sh)...")
-    if admin_api.login("admin@lendahand.me", "admin"):
+    if admin_api.login("admin@lend-a-hand.me", "admin"):
         users_for_news.append(admin_api)
         print("  ✓ Logged in as admin")
     else:
         print("  ✗ Failed to login as admin (ensure setup-db.sh has been run)")
 
-    if moderator_api.login("moderator@lendahand.me", "moderator"):
+    if moderator_api.login("moderator@lend-a-hand.me", "moderator"):
         users_for_news.append(moderator_api)
         print("  ✓ Logged in as moderator")
     else:
@@ -260,43 +223,15 @@ def seed_data(api_base_url):
         # Store the API client
         user_apis[email] = user_api
 
-        # Track users for campaigns and news
-        if user_data.get("creates_campaigns", False):
-            users_for_campaigns.append(user_api)
+        # Track users for news creation
         if user_data.get("creates_news", False):
             users_for_news.append(user_api)
 
         print(f"  ✓ User {email} ready")
     print()
 
-    # Step 4: Create campaigns (distributed among users who create campaigns)
-    print(f"Step 4: Creating campaigns...")
-    campaigns_file = SEEDDATA_DIR / "campaigns.json"
-    campaigns_data = load_json_file(campaigns_file)
-    if campaigns_data:
-        if not users_for_campaigns:
-            print("  ⚠ No users available for creating campaigns")
-        else:
-            user_index = 0
-            for campaign_data in campaigns_data:
-                # Get image files
-                image_files = []
-                if "images" in campaign_data:
-                    for img_name in campaign_data["images"]:
-                        img_path = IMAGES_DIR / img_name
-                        if img_path.exists():
-                            image_files.append(img_path)
-                        else:
-                            print(f"  ⚠ Image not found: {img_name}")
-
-                # Rotate through users who can create campaigns
-                current_user_api = users_for_campaigns[user_index % len(users_for_campaigns)]
-                current_user_api.create_campaign(campaign_data, image_files if image_files else None)
-                user_index += 1
-    print()
-
-    # Step 5: Create news (requires moderator/admin created by setup-db.sh)
-    print("Step 5: Creating news articles...")
+    # Step 4: Create news (requires moderator/admin created by setup-db.sh)
+    print("Step 4: Creating news articles...")
     news_file = SEEDDATA_DIR / "news.json"
     news_data = load_json_file(news_file)
     if news_data:
@@ -324,8 +259,8 @@ def seed_data(api_base_url):
     print("=" * 60)
     print()
     print("Test accounts available:")
-    print("  Admin:    admin@lendahand.me / admin (created by setup-db.sh)")
-    print("  Moderator: moderator@lendahand.me / moderator (created by setup-db.sh)")
+    print("  Admin:    admin@lend-a-hand.me / admin (created by setup-db.sh)")
+    print("  Moderator: moderator@lend-a-hand.me / moderator (created by setup-db.sh)")
     for user_data in regular_users_data:
         email = user_data["email"]
         password = user_data["password"]

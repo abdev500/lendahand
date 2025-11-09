@@ -1,5 +1,5 @@
 """
-URL configuration for lendahand project.
+URL configuration for lend-a-hand project.
 """
 
 from django.conf import settings

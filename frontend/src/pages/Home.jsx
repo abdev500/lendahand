@@ -19,7 +19,9 @@ function Home() {
       const response = await api.get('/campaigns/?status=approved')
       // Ensure we always have an array
       const campaignsData = response.data.results || response.data || []
-      setCampaigns(Array.isArray(campaignsData) ? campaignsData : [])
+      const list = Array.isArray(campaignsData) ? campaignsData : []
+      const readyCampaigns = list.filter((campaign) => campaign?.stripe_ready)
+      setCampaigns(readyCampaigns)
       setLoading(false)
     } catch (error) {
       console.error('Error fetching campaigns:', error)
