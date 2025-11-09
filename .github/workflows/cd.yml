@@ -78,6 +78,7 @@ jobs:
             --set "frontend.env.REACT_APP_API_URL=${{ env.URL_API }}" \
             --set "backend.env.STRIPE_ONBOARDING_RETURN_URL=${{ env.STRIPE_ONBOARDING_RETURN_URL }}" \
             --set "backend.env.STRIPE_ONBOARDING_REFRESH_URL=${{ env.STRIPE_ONBOARDING_REFRESH_URL }}" \
+            --set "backend.env.DATABASE_URL=postgresql://postgres:${{ secrets.PGPASS }}@infra-postgresql:5432/lend-a-hand" \
             --set "frontend.env.REACT_APP_API_URL=${{ env.URL_API }}" \
             --set "frontend.ingress.hosts[0].host=${{ env.URL_REACT_INGRESS }}" \
             --set backend.env.STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
