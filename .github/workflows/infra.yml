@@ -47,5 +47,5 @@ jobs:
             --set "storage.minio.ingress.hosts[0].host=${{ env.URL_MINIIO_CONSOLE }}" \
             --set "storage.minio.ingress.hosts[1].host=${{ env.URL_MINIIO_API }}" \
             --set "postgresql.auth.password=${{ secrets.PGPASS }}" \
-            --set "storage.minio.auth.rootPassword.MINIOPASS=${{ secrets.PGPASS }}" \
+            --set "storage.minio.auth.rootPassword.MINIOPASS=${{ secrets.MINIOPASS }}" 
           kubectl get pods -A --namespace ${{ env.K8_NAMESPACE }}
