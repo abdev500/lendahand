@@ -1,0 +1,9 @@
+version: "3.9"
+
+services:
+  backend-tests:
+    build:
+      context: ../..
+      dockerfile: backend/test/Dockerfile.backend-tests
+    image: lendahand-backend-tests
+    restart: "no"
