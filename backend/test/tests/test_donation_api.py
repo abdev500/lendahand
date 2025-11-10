@@ -1,6 +1,7 @@
-import pytest
 from decimal import Decimal
 from types import SimpleNamespace
+
+import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
