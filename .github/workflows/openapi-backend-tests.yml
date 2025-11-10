@@ -1,0 +1,39 @@
+name: Backend Tests (Docker)
+
+on:
+  workflow_dispatch:
+    inputs:
+      stripe-mock-version:
+        description: Optional stripe-mock version (defaults to latest)
+        required: false
+        default: ""
+
+jobs:
+  backend-tests-docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build backend test image
+        env:
+          STRIPE_MOCK_VERSION: ${{ github.event.inputs.stripe-mock-version }}
+        run: |
+          if [ -n "$STRIPE_MOCK_VERSION" ]; then
+            docker build \
+              -f backend/test/Dockerfile.backend-tests \
+              -t lendahand-backend-tests \
+              --build-arg STRIPE_MOCK_VERSION="$STRIPE_MOCK_VERSION" \
+              .
+          else
+            docker build \
+              -f backend/test/Dockerfile.backend-tests \
+              -t lendahand-backend-tests \
+              .
+          fi
+
+      - name: Run backend tests container
+        run: docker run --rm lendahand-backend-tests
