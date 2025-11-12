@@ -162,3 +162,13 @@
   text-decoration: none;
 }
 
+.campaign-link.disabled {
+  background: #b0b0b0;
+  color: var(--color-white);
+  cursor: default;
+  text-decoration: none;
+}
+
+.campaign-link.disabled:hover {
+  background: #b0b0b0;
+}

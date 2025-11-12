@@ -1,0 +1,11 @@
+=== Title ===
+Legal Aid Services
+
+=== Short Description ===
+Legal support for refugees
+
+=== Description (HTML) ===
+<p>Legal documentation and aid services are crucial for refugees navigating new systems.</p>
+
+=== Target Amount ===
+28000

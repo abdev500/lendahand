@@ -74,6 +74,9 @@ If you prefer to set up manually:
    DJANGO_SECRET_KEY=your-secret-key
    STRIPE_SECRET_KEY=your-stripe-secret-key
    STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
+   STRIPE_CLIENT_ID=your-stripe-connect-client-id
+   STRIPE_ONBOARDING_RETURN_URL=http://localhost:5173/dashboard?stripe_onboarding=complete
+   STRIPE_ONBOARDING_REFRESH_URL=http://localhost:5173/dashboard?stripe_onboarding=refresh
    ```
 
 4. **Run migrations**:
@@ -120,6 +123,9 @@ If you prefer to set up manually:
      - DJANGO_SECRET_KEY=your-secret-key
      - STRIPE_SECRET_KEY=your-stripe-secret-key
      - STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
+     - STRIPE_CLIENT_ID=your-stripe-connect-client-id
+     - STRIPE_ONBOARDING_RETURN_URL=https://your-frontend-host/dashboard?stripe_onboarding=complete
+     - STRIPE_ONBOARDING_REFRESH_URL=https://your-frontend-host/dashboard?stripe_onboarding=refresh
      - DATABASE_URL=postgres://user:password@db:5432/dbname
    ```
 
@@ -139,6 +145,9 @@ Create a `.env` file or set these environment variables:
 - `STRIPE_SECRET_KEY`: Stripe secret key
 - `STRIPE_PUBLISHABLE_KEY`: Stripe publishable key
 - `STRIPE_WEBHOOK_SECRET`: Stripe webhook secret (optional)
+- `STRIPE_CLIENT_ID`: Stripe Connect client ID (Express)
+- `STRIPE_ONBOARDING_RETURN_URL`: URL users return to after completing Stripe onboarding
+- `STRIPE_ONBOARDING_REFRESH_URL`: URL Stripe calls when onboarding link expires and user needs a new link
 - `DATABASE_URL`: PostgreSQL connection string (production)
 - `DEBUG`: Set to `False` in production
 - `ALLOWED_HOSTS`: Comma-separated list of allowed hosts

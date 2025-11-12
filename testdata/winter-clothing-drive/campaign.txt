@@ -1,0 +1,11 @@
+=== Title ===
+Winter Clothing Drive
+
+=== Short Description ===
+Warm clothing for those facing harsh winters
+
+=== Description (HTML) ===
+<p>Winter can be particularly difficult for displaced families. This campaign provides warm clothing and blankets.</p>
+
+=== Target Amount ===
+20000

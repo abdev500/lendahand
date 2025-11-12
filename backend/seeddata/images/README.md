@@ -1,6 +1,6 @@
 # Seed Images
 
-This folder contains sample images used by the `seeddata/seed.py` script to populate campaigns and news articles with realistic media via REST API.
+This folder contains sample images used by the `seeddata/seed.py` script to populate news articles with realistic media via REST API.
 
 ## Image Categories
 
@@ -13,7 +13,7 @@ This folder contains sample images used by the `seeddata/seed.py` script to popu
 
 ## Usage
 
-The `seeddata/seed.py` script assigns images from the appropriate category to each campaign based on the image list specified in `campaigns.json` and `news.json`.
+The `seeddata/seed.py` script assigns images from the appropriate category to each news article based on the image list specified in `news.json`.
 
 ## Image Sources
 

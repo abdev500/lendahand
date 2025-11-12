@@ -29,6 +29,10 @@ The Django backend reads Stripe keys from environment variables. You have two op
    ```bash
    STRIPE_SECRET_KEY=sk_test_your_secret_key_here
    STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key_here
+   STRIPE_CLIENT_ID=ca_your_connect_client_id
+   STRIPE_ONBOARDING_RETURN_URL=http://localhost:5173/dashboard?stripe_onboarding=complete
+   STRIPE_ONBOARDING_REFRESH_URL=http://localhost:5173/dashboard?stripe_onboarding=refresh
+   FRONTEND_URL=http://localhost:5173
    ```
 
 3. Make sure `.env` is in your `.gitignore` file (it should be already)
@@ -39,16 +43,35 @@ Set the environment variables in your shell:
 ```bash
 export STRIPE_SECRET_KEY=sk_test_your_secret_key_here
 export STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key_here
+export STRIPE_CLIENT_ID=ca_your_connect_client_id
+export STRIPE_ONBOARDING_RETURN_URL=http://localhost:5173/dashboard?stripe_onboarding=complete
+export STRIPE_ONBOARDING_REFRESH_URL=http://localhost:5173/dashboard?stripe_onboarding=refresh
+export FRONTEND_URL=http://localhost:5173
 ```
 
 Or add them to your shell profile (e.g., `~/.zshrc` or `~/.bashrc`):
 ```bash
 echo 'export STRIPE_SECRET_KEY=sk_test_your_secret_key_here' >> ~/.zshrc
 echo 'export STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key_here' >> ~/.zshrc
+echo 'export STRIPE_CLIENT_ID=ca_your_connect_client_id' >> ~/.zshrc
+echo 'export STRIPE_ONBOARDING_RETURN_URL=http://localhost:5173/dashboard?stripe_onboarding=complete' >> ~/.zshrc
+echo 'export STRIPE_ONBOARDING_REFRESH_URL=http://localhost:5173/dashboard?stripe_onboarding=refresh' >> ~/.zshrc
+echo 'export FRONTEND_URL=http://localhost:5173' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-## Step 3: Verify Configuration
+## Step 3: Configure Stripe Connect Onboarding
+
+Campaign owners create and reuse their own Stripe Express accounts during campaign creation. Make sure your platform is prepared:
+
+1. In Stripe Dashboard go to **Settings → Connect settings** and enable **Connect** with **Express** accounts.
+2. Copy your **Client ID** (found under “Integration” → “Client ID”) and set it as `STRIPE_CLIENT_ID`.
+3. Ensure `STRIPE_ONBOARDING_RETURN_URL` and `STRIPE_ONBOARDING_REFRESH_URL` are publicly reachable URLs that redirect users back to your frontend dashboard.
+4. If you use different environments (development, staging, production), configure separate URLs and client IDs for each.
+
+Stripe requires HTTPS for production return URLs. For local testing you can use `http://localhost` but Stripe may require you to enable “Allow HTTP” in the Connect settings or use a tunneling service (ngrok, Cloudflare Tunnel).
+
+## Step 4: Verify Configuration
 
 After setting the keys, restart your Django server and verify:
 
@@ -70,7 +93,7 @@ STRIPE_SECRET_KEY configured: True
 STRIPE_SECRET_KEY length: 32
 ```
 
-## Step 4: Test the Donation Flow
+## Step 5: Test the Donation Flow
 
 1. Start your Django backend server:
    ```bash
@@ -109,6 +132,11 @@ STRIPE_SECRET_KEY length: 32
 - Verify the `.env` file exists and has the correct variable name
 - Restart the Django server after setting environment variables
 
+### Issue: "Campaign cannot be moderated or accept donations yet"
+- **Solution**: The campaign owner's Stripe Express onboarding is incomplete. From the dashboard click **Resume Stripe setup** to generate a fresh onboarding link.
+- Confirm `STRIPE_CLIENT_ID`, `STRIPE_ONBOARDING_RETURN_URL`, and `STRIPE_ONBOARDING_REFRESH_URL` are configured and match the URLs registered in the Stripe Dashboard.
+- Check Stripe Dashboard → Connect → Accounts to ensure the connected account has `charges_enabled` and `payouts_enabled`.
+
 ### Issue: "Invalid API Key"
 - **Solution**: Make sure you're using the correct key type (test vs live)
 - Verify there are no extra spaces or quotes in the `.env` file
@@ -127,4 +155,3 @@ STRIPE_SECRET_KEY length: 32
 - Use different keys for development and production
 - Rotate keys if they're accidentally exposed
 - Use environment variables or secrets management in production (not `.env` files)
-

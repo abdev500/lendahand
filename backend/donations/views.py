@@ -1,20 +1,23 @@
 import logging
+from datetime import datetime
+from datetime import timezone as dt_timezone
 
 import stripe
 from django.conf import settings
 from django.contrib.auth import logout
 from django.db.models import Q
+from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import permissions, status, viewsets
+from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
 
-from .models import Campaign, Donation, News, User
+from .models import Campaign, Donation, News, User, UserStripeAccount
 from .serializers import (
     CampaignCreateSerializer,
     CampaignSerializer,
@@ -33,6 +36,68 @@ from .serializers import (
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
+def get_user_stripe_account(user):
+    try:
+        return user.stripe_account
+    except UserStripeAccount.DoesNotExist:
+        return None
+
+
+def create_stripe_account_for_user(user):
+    """Create a new Stripe Express account for the given user."""
+    account = stripe.Account.create(
+        type="express",
+        email=user.email or None,
+        capabilities={
+            "card_payments": {"requested": True},
+            "transfers": {"requested": True},
+        },
+        business_type="individual",
+        metadata={
+            "platform_user_id": str(user.id),
+        },
+    )
+    return account
+
+
+def ensure_user_stripe_account(user):
+    """Ensure the user has a Stripe account record and return it."""
+    account = get_user_stripe_account(user)
+    if account:
+        return account
+
+    if not settings.STRIPE_SECRET_KEY:
+        logger.error("Attempted to create Stripe account but STRIPE_SECRET_KEY is not configured.")
+        raise RuntimeError("Stripe configuration is not available. Please contact support.")
+
+    stripe_account = create_stripe_account_for_user(user)
+    logger.info("Created Stripe account %s for user %s", stripe_account.id, user.email)
+    account = UserStripeAccount.objects.create(
+        user=user,
+        stripe_account_id=stripe_account.id,
+        charges_enabled=stripe_account.get("charges_enabled", False),
+        payouts_enabled=stripe_account.get("payouts_enabled", False),
+        details_submitted=stripe_account.get("details_submitted", False),
+        requirements_due=stripe_account.get("requirements", {}).get("currently_due", []),
+    )
+    return account
+
+
+def sync_user_stripe_account(user_account):
+    """Refresh Stripe account status from Stripe API."""
+    stripe_account = stripe.Account.retrieve(user_account.stripe_account_id)
+    user_account.update_from_stripe_account(stripe_account)
+    if user_account.is_ready and (user_account.onboarding_url or user_account.onboarding_expires_at):
+        user_account.onboarding_url = ""
+        user_account.onboarding_expires_at = None
+        user_account.save(update_fields=["onboarding_url", "onboarding_expires_at", "updated_at"])
+    return user_account
+
+
+class UserActivationSerializer(serializers.Serializer):
+    is_active = serializers.BooleanField()
+
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -40,13 +105,32 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.request.user.is_moderator or self.request.user.is_staff:
-            return User.objects.all()
+            return User.objects.all().order_by("-date_joined")
         return User.objects.filter(id=self.request.user.id)
 
     @action(detail=False, methods=["get"])
     def me(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+
+    @action(detail=True, methods=["post"], url_path="set-active")
+    def set_active(self, request, pk=None):
+        if not (request.user.is_moderator or request.user.is_staff):
+            raise PermissionDenied("Only moderators and staff can modify user activation status.")
+
+        serializer = UserActivationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        target_user = self.get_object()
+        if target_user == request.user:
+            raise ValidationError({"is_active": "You cannot change your own activation status."})
+
+        new_status = serializer.validated_data["is_active"]
+        if target_user.is_active != new_status:
+            target_user.is_active = new_status
+            target_user.save(update_fields=["is_active"])
+
+        return Response(self.get_serializer(target_user).data)
 
     @action(detail=False, methods=["post"])
     def change_password(self, request):
@@ -61,6 +145,112 @@ class UserViewSet(viewsets.ModelViewSet):
             request.user.save()
             return Response({"status": "password changed"})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=["post"], url_path="stripe/onboard")
+    def stripe_onboard(self, request):
+        if not settings.STRIPE_SECRET_KEY:
+            raise ValidationError({"stripe": "Stripe is not configured."})
+
+        try:
+            account = ensure_user_stripe_account(request.user)
+        except RuntimeError as exc:
+            raise ValidationError({"stripe": str(exc)})
+        except stripe.error.StripeError as exc:
+            logger.error("Stripe error creating account for user %s: %s", request.user.id, exc)
+            raise ValidationError({"stripe": str(exc)})
+
+        try:
+            account = sync_user_stripe_account(account)
+        except stripe.error.StripeError as exc:
+            logger.warning("Unable to sync Stripe account %s: %s", account.stripe_account_id, exc)
+
+        if account.is_ready:
+            return Response(
+                {
+                    "has_account": True,
+                    "stripe_ready": True,
+                    "stripe_account_id": account.stripe_account_id,
+                    "charges_enabled": account.charges_enabled,
+                    "payouts_enabled": account.payouts_enabled,
+                    "details_submitted": account.details_submitted,
+                    "requirements_due": account.requirements_due,
+                }
+            )
+
+        try:
+            account_link = stripe.AccountLink.create(
+                account=account.stripe_account_id,
+                refresh_url=settings.STRIPE_ONBOARDING_REFRESH_URL,
+                return_url=settings.STRIPE_ONBOARDING_RETURN_URL,
+                type="account_onboarding",
+            )
+        except stripe.error.StripeError as exc:
+            logger.error("Stripe error creating onboarding link for account %s: %s", account.stripe_account_id, exc)
+            raise ValidationError({"stripe": str(exc)})
+
+        expires_at = None
+        if getattr(account_link, "expires_at", None):
+            expires_at = datetime.fromtimestamp(account_link.expires_at, tz=dt_timezone.utc)
+
+        account.onboarding_url = account_link.url
+        account.onboarding_expires_at = expires_at
+        account.save(update_fields=["onboarding_url", "onboarding_expires_at", "updated_at"])
+
+        return Response(
+            {
+                "has_account": True,
+                "stripe_ready": False,
+                "stripe_account_id": account.stripe_account_id,
+                "onboarding_url": account_link.url,
+                "expires_at": getattr(account_link, "expires_at", None),
+            }
+        )
+
+    @action(detail=False, methods=["get"], url_path="stripe/status")
+    def stripe_status(self, request):
+        account = get_user_stripe_account(request.user)
+        if not account:
+            return Response({"has_account": False, "stripe_ready": False})
+
+        try:
+            account = sync_user_stripe_account(account)
+        except stripe.error.StripeError as exc:
+            logger.warning("Unable to sync Stripe account %s during status check: %s", account.stripe_account_id, exc)
+
+        Campaign.objects.filter(created_by=request.user).update(stripe_ready=account.is_ready)
+
+        dashboard_url = account.dashboard_url or ""
+        if account.stripe_account_id:
+            try:
+                login_link = stripe.Account.create_login_link(account.stripe_account_id)
+                dashboard_url = login_link.get("url", "") or dashboard_url
+            except stripe.error.StripeError as exc:
+                logger.warning(
+                    "Unable to generate dashboard link for account %s: %s",
+                    account.stripe_account_id,
+                    exc,
+                )
+            else:
+                if dashboard_url and dashboard_url != account.dashboard_url:
+                    account.dashboard_url = dashboard_url
+                    account.save(update_fields=["dashboard_url", "updated_at"])
+
+        return Response(
+            {
+                "has_account": True,
+                "stripe_ready": account.is_ready,
+                "stripe_account_id": account.stripe_account_id,
+                "charges_enabled": account.charges_enabled,
+                "payouts_enabled": account.payouts_enabled,
+                "details_submitted": account.details_submitted,
+                "requirements_due": account.requirements_due,
+                "onboarding_url": account.onboarding_url,
+                "onboarding_expires_at": (
+                    account.onboarding_expires_at.isoformat() if account.onboarding_expires_at else None
+                ),
+                "dashboard_url": dashboard_url or None,
+            }
+        )
 
 
 @api_view(["POST"])
@@ -141,11 +331,11 @@ def password_reset_request(request):
     """
     Request password reset - sends email with reset link.
     """
-    from django.contrib.auth.tokens import default_token_generator
-    from django.utils.http import urlsafe_base64_encode
-    from django.utils.encoding import force_bytes
-    from django.core.mail import send_mail
     from django.conf import settings
+    from django.contrib.auth.tokens import default_token_generator
+    from django.core.mail import send_mail
+    from django.utils.encoding import force_bytes
+    from django.utils.http import urlsafe_base64_encode
 
     serializer = PasswordResetRequestSerializer(data=request.data)
     if not serializer.is_valid():
@@ -213,8 +403,8 @@ def password_reset_confirm(request):
     Confirm password reset with token.
     """
     from django.contrib.auth.tokens import default_token_generator
-    from django.utils.http import urlsafe_base64_decode
     from django.utils.encoding import force_str
+    from django.utils.http import urlsafe_base64_decode
 
     serializer = PasswordResetConfirmSerializer(data=request.data)
     if not serializer.is_valid():
@@ -262,27 +452,73 @@ class CampaignViewSet(viewsets.ModelViewSet):
             return CampaignCreateSerializer
         return CampaignSerializer
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        include_history = (
+            self.request.query_params.get("include_history", "").lower() == "true"
+            if hasattr(self.request, "query_params")
+            else False
+        )
+        context["include_history"] = include_history
+        return context
+
     def get_queryset(self):
         queryset = Campaign.objects.all()
         status_filter = self.request.query_params.get("status", None)
 
         # Public can only see approved campaigns
         if not self.request.user.is_authenticated:
-            queryset = queryset.filter(status="approved")
+            queryset = queryset.filter(status="approved", stripe_ready=True)
         elif not (self.request.user.is_moderator or self.request.user.is_staff):
-            # Regular users see approved + their own campaigns
-            queryset = queryset.filter(Q(status="approved") | Q(created_by=self.request.user))
+            # Regular users see approved, Stripe-ready campaigns plus their own
+            queryset = queryset.filter(Q(status="approved", stripe_ready=True) | Q(created_by=self.request.user))
 
         if status_filter:
             queryset = queryset.filter(status=status_filter)
 
-        return queryset.select_related("created_by").prefetch_related("media", "donations")
+        queryset = queryset.select_related("created_by").prefetch_related("media", "donations")
+
+        if self.request.query_params.get("include_history", "").lower() == "true":
+            queryset = queryset.prefetch_related("moderation_history__moderator")
+
+        return queryset
 
     def perform_create(self, serializer):
-        # Don't pass created_by and status here - let the serializer handle it
-        # This avoids duplicate keyword arguments when the serializer's create() method
-        # also tries to set created_by
-        serializer.save()
+        campaign = serializer.save()
+
+        if not settings.STRIPE_SECRET_KEY:
+            logger.error("Campaign creation attempted without Stripe configuration.")
+            raise ValidationError({"stripe": "Stripe configuration is missing. Please contact support."})
+
+        try:
+            stripe_account = ensure_user_stripe_account(self.request.user)
+        except RuntimeError as exc:
+            raise ValidationError({"stripe": str(exc)})
+        except stripe.error.StripeError as exc:
+            logger.error(
+                "Stripe error ensuring account for user %s during campaign creation: %s",
+                self.request.user.id,
+                exc,
+            )
+            raise ValidationError({"stripe": "Unable to create Stripe account. Please try again later."})
+
+        try:
+            stripe_account = sync_user_stripe_account(stripe_account)
+        except stripe.error.StripeError as exc:
+            logger.warning(
+                "Unable to sync Stripe account %s during campaign creation: %s",
+                stripe_account.stripe_account_id,
+                exc,
+            )
+
+        campaign.stripe_ready = stripe_account.is_ready
+
+        update_fields = ["stripe_ready", "updated_at"]
+        if not stripe_account.is_ready and campaign.status != "draft":
+            campaign.status = "draft"
+            update_fields.append("status")
+
+        campaign.save(update_fields=update_fields)
 
     def perform_update(self, serializer):
         instance = serializer.instance
@@ -291,6 +527,11 @@ class CampaignViewSet(viewsets.ModelViewSet):
             self.request.user.is_moderator or self.request.user.is_staff
         ):
             raise PermissionDenied("You can only edit your own campaigns.")
+        new_status = serializer.validated_data.get("status", instance.status)
+        if new_status in ["pending", "approved"] and not instance.stripe_ready:
+            raise ValidationError(
+                {"status": "Complete Stripe onboarding before submitting this campaign for moderation."}
+            )
         # Reset moderation when editing approved/rejected campaigns
         if instance.status in ["approved", "rejected"]:
             serializer.save(status="pending", moderation_notes="")
@@ -300,7 +541,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def suspend(self, request, pk=None):
         campaign = self.get_object()
-        if campaign.created_by != request.user:
+        if campaign.created_by != request.user and not (request.user.is_moderator or request.user.is_staff):
             return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
         campaign.status = "suspended"
         campaign.save()
@@ -316,12 +557,60 @@ class CampaignViewSet(viewsets.ModelViewSet):
         return Response({"status": "campaign cancelled"})
 
     @action(detail=True, methods=["post"])
+    def resume(self, request, pk=None):
+        if not (request.user.is_moderator or request.user.is_staff):
+            raise PermissionDenied("Only moderators and staff can resume campaigns.")
+
+        campaign = self.get_object()
+
+        if campaign.status not in ["suspended", "cancelled"]:
+            return Response(
+                {"error": "Campaign is not suspended or cancelled."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not campaign.stripe_ready:
+            return Response(
+                {"error": "Campaign cannot be resumed until Stripe onboarding is complete."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        moderation_notes = request.data.get("moderation_notes")
+        campaign.status = "approved"
+        update_fields = ["status", "updated_at"]
+        if moderation_notes is not None:
+            campaign.moderation_notes = moderation_notes
+            update_fields.append("moderation_notes")
+        campaign.save(update_fields=update_fields)
+
+        from .models import ModerationHistory
+
+        ModerationHistory.objects.create(
+            campaign=campaign,
+            moderator=request.user,
+            action="resume",
+            notes=moderation_notes if moderation_notes is not None else campaign.moderation_notes,
+        )
+
+        return Response(
+            {
+                "status": "campaign resumed",
+                "campaign": CampaignSerializer(campaign).data,
+            }
+        )
+
+    @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
         """Approve a pending campaign. Only moderators/staff can approve."""
         if not (request.user.is_moderator or request.user.is_staff):
             raise PermissionDenied("Only moderators and staff can approve campaigns.")
 
         campaign = self.get_object()
+        if not campaign.stripe_ready:
+            return Response(
+                {"error": "Campaign cannot be approved until Stripe onboarding is complete."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if campaign.status != "pending":
             return Response(
                 {"error": "Campaign is not pending moderation."},
@@ -438,6 +727,35 @@ class DonationViewSet(viewsets.ModelViewSet):
         except Campaign.DoesNotExist:
             return Response({"error": "Campaign not found or not approved"}, status=status.HTTP_404_NOT_FOUND)
 
+        user_account = get_user_stripe_account(campaign.created_by)
+        if not user_account:
+            logger.error("Campaign %s has no associated Stripe account via creator", campaign.id)
+            return Response(
+                {"error": "Campaign is not ready to accept donations. Please try again later."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            stripe_account = sync_user_stripe_account(user_account)
+        except stripe.error.StripeError as exc:
+            logger.error("Stripe error syncing account %s: %s", user_account.stripe_account_id, exc)
+            return Response(
+                {"error": "Unable to prepare payment at this time. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        if not stripe_account.is_ready:
+            campaign.stripe_ready = False
+            campaign.save(update_fields=["stripe_ready", "updated_at"])
+            return Response(
+                {"error": "Campaign is not ready to accept donations. Please try again later."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not campaign.stripe_ready:
+            campaign.stripe_ready = True
+            campaign.save(update_fields=["stripe_ready", "updated_at"])
+
         # Create Stripe Checkout session
         try:
             checkout_session = stripe.checkout.Session.create(
@@ -445,7 +763,7 @@ class DonationViewSet(viewsets.ModelViewSet):
                 line_items=[
                     {
                         "price_data": {
-                            "currency": "usd",
+                            "currency": "eur",
                             "product_data": {
                                 "name": f"Donation to {campaign.title}",
                             },
@@ -459,6 +777,15 @@ class DonationViewSet(viewsets.ModelViewSet):
                 cancel_url=f"{settings.FRONTEND_URL}/campaign/{campaign_id}?canceled=true",
                 metadata={
                     "campaign_id": campaign_id,
+                    "stripe_account_id": stripe_account.stripe_account_id,
+                },
+                payment_intent_data={
+                    "transfer_data": {
+                        "destination": stripe_account.stripe_account_id,
+                    },
+                    "metadata": {
+                        "campaign_id": campaign_id,
+                    },
                 },
             )
 
@@ -634,6 +961,37 @@ def stripe_webhook(request):
         except Exception as e:
             logger.error(f"Webhook error processing checkout.session.completed: {e}")
             return Response({"error": str(e)}, status=500)
+    elif event["type"] == "account.updated":
+        account_data = event["data"]["object"]
+        account_id = account_data.get("id")
+
+        if not account_id:
+            logger.warning("Received account.updated event without account id")
+        else:
+            try:
+                user_account = UserStripeAccount.objects.get(stripe_account_id=account_id)
+            except UserStripeAccount.DoesNotExist:
+                logger.warning("Received account.updated for unknown account %s", account_id)
+            else:
+                user_account.update_from_stripe_account(account_data)
+                Campaign.objects.filter(created_by=user_account.user).update(stripe_ready=user_account.is_ready)
+    elif event["type"] == "capability.updated":
+        capability_data = event["data"]["object"]
+        account_id = capability_data.get("account")
+
+        if not account_id:
+            logger.warning("Received capability.updated event without account id")
+        else:
+            try:
+                user_account = UserStripeAccount.objects.get(stripe_account_id=account_id)
+            except UserStripeAccount.DoesNotExist:
+                logger.warning("Received capability.updated for unknown account %s", account_id)
+            else:
+                try:
+                    user_account = sync_user_stripe_account(user_account)
+                except stripe.error.StripeError as exc:
+                    logger.error("Unable to sync account %s after capability update: %s", account_id, exc)
+                Campaign.objects.filter(created_by=user_account.user).update(stripe_ready=user_account.is_ready)
 
     return Response({"status": "success"})
 
@@ -677,10 +1035,10 @@ def serve_media(request, file_path):
     URL format: /api/media/<file_path>
     Example: /api/media/campaigns/image.jpg
     """
-    from django.conf import settings
-    from django.http import StreamingHttpResponse, Http404
     import boto3
     from botocore.exceptions import ClientError
+    from django.conf import settings
+    from django.http import Http404, StreamingHttpResponse
 
     # Only serve media if S3 storage is enabled
     if not settings.USE_S3_STORAGE:
@@ -689,10 +1047,10 @@ def serve_media(request, file_path):
     try:
         # Connect to MinIO
         s3_client = boto3.client(
-            's3',
+            "s3",
             endpoint_url=settings.AWS_S3_ENDPOINT_URL,
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         )
 
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME
@@ -701,29 +1059,29 @@ def serve_media(request, file_path):
         try:
             obj = s3_client.get_object(Bucket=bucket_name, Key=file_path)
         except ClientError as e:
-            error_code = e.response.get('Error', {}).get('Code', '')
-            if error_code == 'NoSuchKey':
+            error_code = e.response.get("Error", {}).get("Code", "")
+            if error_code == "NoSuchKey":
                 raise Http404("File not found")
             logger.error(f"Error accessing file {file_path}: {e}")
             raise Http404("Error accessing file")
 
         # Determine content type
-        content_type = obj.get('ContentType', 'application/octet-stream')
+        content_type = obj.get("ContentType", "application/octet-stream")
 
         # Stream the file content
         def file_iterator():
-            for chunk in obj['Body'].iter_chunks(chunk_size=8192):
+            for chunk in obj["Body"].iter_chunks(chunk_size=8192):
                 yield chunk
 
         # Create streaming response
         response = StreamingHttpResponse(file_iterator(), content_type=content_type)
 
         # Set cache headers
-        response['Cache-Control'] = 'public, max-age=86400'  # Cache for 1 day
+        response["Cache-Control"] = "public, max-age=86400"  # Cache for 1 day
 
         # Set content length if available
-        if 'ContentLength' in obj:
-            response['Content-Length'] = str(obj['ContentLength'])
+        if "ContentLength" in obj:
+            response["Content-Length"] = str(obj["ContentLength"])
 
         return response
 

@@ -19,6 +19,55 @@ class User(AbstractUser):
         verbose_name_plural = _("users")
 
 
+class UserStripeAccount(models.Model):
+    """Stores Stripe Connect account information per user."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="stripe_account")
+    stripe_account_id = models.CharField(max_length=255, unique=True)
+    charges_enabled = models.BooleanField(default=False)
+    payouts_enabled = models.BooleanField(default=False)
+    details_submitted = models.BooleanField(default=False)
+    requirements_due = models.JSONField(default=list, blank=True)
+    onboarding_url = models.URLField(blank=True)
+    onboarding_expires_at = models.DateTimeField(null=True, blank=True)
+    dashboard_url = models.URLField(blank=True)
+    last_synced_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("user stripe account")
+        verbose_name_plural = _("user stripe accounts")
+
+    def __str__(self):
+        return f"{self.user.email} - {self.stripe_account_id}"
+
+    @property
+    def is_ready(self):
+        return self.charges_enabled and self.payouts_enabled and self.details_submitted
+
+    def update_from_stripe_account(self, account_data):
+        """Update persisted fields from Stripe API response."""
+        requirements = account_data.get("requirements", {})
+        self.charges_enabled = account_data.get("charges_enabled", False)
+        self.payouts_enabled = account_data.get("payouts_enabled", False)
+        self.details_submitted = account_data.get("details_submitted", False)
+        self.requirements_due = requirements.get("currently_due", [])
+        update_fields = [
+            "charges_enabled",
+            "payouts_enabled",
+            "details_submitted",
+            "requirements_due",
+            "dashboard_url",
+            "updated_at",
+        ]
+        if self.is_ready and (self.onboarding_url or self.onboarding_expires_at):
+            self.onboarding_url = ""
+            self.onboarding_expires_at = None
+            update_fields.extend(["onboarding_url", "onboarding_expires_at"])
+        self.save(update_fields=update_fields)
+
+
 class Campaign(models.Model):
     """Campaign model for fundraising."""
 
@@ -41,6 +90,7 @@ class Campaign(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     moderation_notes = models.TextField(blank=True)
+    stripe_ready = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-created_at"]

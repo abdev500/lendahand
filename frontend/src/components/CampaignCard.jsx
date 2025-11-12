@@ -4,6 +4,7 @@ import './CampaignCard.css'
 
 function CampaignCard({ campaign }) {
   const { t } = useTranslation()
+  const canDonate = !!campaign.stripe_ready
 
   return (
     <div className="campaign-card">
@@ -35,9 +36,15 @@ function CampaignCard({ campaign }) {
             <span className="progress-percentage">{campaign.progress_percentage || 0}%</span>
           </div>
         </div>
-        <Link to={`/campaign/${campaign.id}`} className="campaign-link">
-          {t('campaign.donate')}
-        </Link>
+        {canDonate ? (
+          <Link to={`/campaign/${campaign.id}`} className="campaign-link">
+            {t('campaign.donate')}
+          </Link>
+        ) : (
+          <span className="campaign-link disabled">
+            {t('campaign.stripePendingShort', 'Stripe setup in progress')}
+          </span>
+        )}
       </div>
     </div>
   )

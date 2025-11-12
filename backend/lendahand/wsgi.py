@@ -1,5 +1,5 @@
 """
-WSGI config for lendahand project.
+WSGI config for lend-a-hand project.
 """
 
 import os

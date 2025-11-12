@@ -1,0 +1,11 @@
+=== Title ===
+Education Support Program
+
+=== Short Description ===
+Ensuring children continue their education
+
+=== Description (HTML) ===
+<p>Many children have been forced to leave their schools. This program provides educational materials and support for displaced students.</p>
+
+=== Target Amount ===
+30000

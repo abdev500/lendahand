@@ -1,37 +1,113 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15
+    container_name: lendahand-postgres
+    environment:
+      POSTGRES_DB: lendahand
+      POSTGRES_USER: lendahand
+      POSTGRES_PASSWORD: lendahand
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=lendahand
-      - POSTGRES_USER=lendahand
-      - POSTGRES_PASSWORD=lendahand
     ports:
       - "5432:5432"
 
-  web:
-    build: .
-    command: bash -c "python manage.py migrate && gunicorn --bind 0.0.0.0:8000 --workers 3 lendahand.wsgi:application"
+  minio:
+    image: minio/minio
+    container_name: lendahand-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
     volumes:
-      - ./backend:/app
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  minio-setup:
+    image: minio/mc
+    container_name: lendahand-minio-setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      set -e
+      until mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"; do
+        echo "Waiting for MinIO..."
+        sleep 2
+      done
+      mc mb --ignore-existing local/"$${AWS_STORAGE_BUCKET_NAME}"
+      mc anonymous set download local/"$${AWS_STORAGE_BUCKET_NAME}"
+      echo "MinIO bucket $${AWS_STORAGE_BUCKET_NAME} ready."
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      AWS_STORAGE_BUCKET_NAME: lendahand-media
+    restart: "on-failure"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lendahand-backend
+    command: >
+      bash -c "python manage.py migrate && gunicorn --bind 0.0.0.0:8000 --workers 3 lendahand.wsgi:application"
+    environment:
+      DEBUG: "True"
+      DJANGO_SECRET_KEY: django-insecure-dev-key-change-in-production
+      ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      DATABASE_URL: postgres://lendahand:lendahand@db:5432/lendahand
+      DB_NAME: lendahand
+      DB_USER: lendahand
+      DB_PASSWORD: lendahand
+      DB_HOST: db
+      DB_PORT: "5432"
+      USE_S3_STORAGE: "True"
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_STORAGE_BUCKET_NAME: lendahand-media
+      AWS_S3_ENDPOINT_URL: http://minio:9000
+      AWS_S3_CUSTOM_DOMAIN: localhost:9000
+      AWS_S3_USE_SSL: "False"
+      FRONTEND_URL: http://localhost:5173
+      BACKEND_URL: http://localhost:8000
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_CLIENT_ID: ${STRIPE_CLIENT_ID:-}
+      STRIPE_ONBOARDING_RETURN_URL: ${STRIPE_ONBOARDING_RETURN_URL:-http://localhost:5173/dashboard?stripe_onboarding=complete}
+      STRIPE_ONBOARDING_REFRESH_URL: ${STRIPE_ONBOARDING_REFRESH_URL:-http://localhost:5173/dashboard?stripe_onboarding=refresh}
+    volumes:
       - static_volume:/app/staticfiles
-      - media_volume:/app/media
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_started
+      minio-setup:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lendahand-frontend
     environment:
-      - DATABASE_URL=postgres://lendahand:lendahand@db:5432/lendahand
-      - DEBUG=False
-      - DJANGO_SECRET_KEY=your-secret-key-change-in-production
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      REACT_APP_API_URL: http://localhost:8000/api
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_started
 
 volumes:
   postgres_data:
   static_volume:
-  media_volume:
   minio_data:
