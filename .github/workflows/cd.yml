@@ -75,6 +75,7 @@ jobs:
             --set frontend.image.tag=${GITHUB_SHA} \
             --set "backend.ingress.hosts[0].host=${{ env.URL_API_INGRESS }}" \
             --set "backend.env.FRONTEND_URL=${{ env.URL_FRONTEND }}" \
+            --set "backend.env.BACKEND_URL=${{ env.BACKEND_URL }}" \
             --set "frontend.env.REACT_APP_API_URL=${{ env.URL_API }}" \
             --set "backend.env.STRIPE_ONBOARDING_RETURN_URL=${{ env.STRIPE_ONBOARDING_RETURN_URL }}" \
             --set "backend.env.STRIPE_ONBOARDING_REFRESH_URL=${{ env.STRIPE_ONBOARDING_REFRESH_URL }}" \
