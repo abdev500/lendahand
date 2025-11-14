@@ -136,8 +136,6 @@ class Donation(models.Model):
 
     campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="donations")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    donor_name = models.CharField(max_length=100, blank=True)
-    donor_email = models.EmailField(blank=True)
     is_anonymous = models.BooleanField(default=True)
     stripe_payment_intent_id = models.CharField(max_length=200, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)

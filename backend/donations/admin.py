@@ -1,16 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import (
-    Campaign,
-    CampaignMedia,
-    Donation,
-    ModerationHistory,
-    News,
-    NewsMedia,
-    User,
-    UserStripeAccount,
-)
+from .models import Campaign, CampaignMedia, Donation, ModerationHistory, News, NewsMedia, User, UserStripeAccount
 
 
 @admin.register(User)

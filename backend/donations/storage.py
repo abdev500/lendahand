@@ -33,7 +33,7 @@ class MinIOStorage(S3Boto3Storage):
         """
         # Get backend base URL from settings
         # BACKEND_URL should be set in environment (e.g., https://api.lend-a-hand.me)
-        backend_url = getattr(settings, 'BACKEND_URL', None)
+        backend_url = getattr(settings, "BACKEND_URL", None)
 
         # Remove any leading slashes from name to avoid double slashes
         clean_name = name.lstrip("/")
@@ -41,7 +41,7 @@ class MinIOStorage(S3Boto3Storage):
         if backend_url:
             # Return absolute URL for production/deployment
             # Remove trailing slash from backend_url if present
-            backend_url = backend_url.rstrip('/')
+            backend_url = backend_url.rstrip("/")
             media_url = f"{backend_url}/api/media/{clean_name}"
         else:
             # Fallback to relative URL for local development

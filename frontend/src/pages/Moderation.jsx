@@ -19,6 +19,7 @@ function Moderation() {
   const [users, setUsers] = useState([])
   const [usersLoading, setUsersLoading] = useState(false)
   const [usersLoaded, setUsersLoaded] = useState(false)
+  const [syncLoading, setSyncLoading] = useState(false)
 
   useEffect(() => {
     const initializeModeration = async () => {
@@ -168,6 +169,48 @@ function Moderation() {
         t('moderation.approveError', 'Error approving campaign')
       setErrorMessage(errorMsg)
       setTimeout(() => setErrorMessage(''), 5000)
+    }
+  }
+
+  const handleSyncAllPayments = async () => {
+    if (!window.confirm(t('moderation.syncAllConfirm', 'This will sync payments for all approved campaigns with Stripe. This may take a while. Continue?'))) {
+      return
+    }
+
+    setSyncLoading(true)
+    setErrorMessage('')
+    setSuccessMessage('')
+
+    try {
+      const response = await api.post('/campaigns/sync_all_payments/')
+      const result = response.data
+
+      let message = t('moderation.syncAllSuccess', 'Sync completed! ')
+      message += t('moderation.syncAllResults',
+        'Synced: {synced}, Failed: {failed}, Skipped: {skipped}. Created {created} donations, updated {updated} donations.',
+        {
+          synced: result.synced || 0,
+          failed: result.failed || 0,
+          skipped: result.skipped || 0,
+          created: result.total_donations_created || 0,
+          updated: result.total_donations_updated || 0,
+        }
+      )
+
+      setSuccessMessage(message)
+      setTimeout(() => setSuccessMessage(''), 10000)
+
+      // Refresh campaigns to show updated amounts
+      await fetchCampaigns()
+    } catch (error) {
+      console.error('Error syncing all payments:', error)
+      const errorMsg = error.response?.data?.error ||
+                      error.response?.data?.detail ||
+                      t('moderation.syncAllError', 'Error syncing payments with Stripe')
+      setErrorMessage(errorMsg)
+      setTimeout(() => setErrorMessage(''), 10000)
+    } finally {
+      setSyncLoading(false)
     }
   }
 
@@ -477,7 +520,26 @@ function Moderation() {
 
         {activeTab === 'campaigns' && (
           <div className="moderation-section">
-            <h2>{t('moderation.allCampaigns', 'All Campaigns')}</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0 }}>{t('moderation.allCampaigns', 'All Campaigns')}</h2>
+              <button
+                type="button"
+                onClick={handleSyncAllPayments}
+                className="btn btn-sync"
+                disabled={syncLoading}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: syncLoading ? 'not-allowed' : 'pointer',
+                  opacity: syncLoading ? 0.6 : 1,
+                }}
+              >
+                {syncLoading ? t('moderation.syncing', 'Syncing...') : t('moderation.syncAllPayments', 'Reconcile All Campaigns with Stripe')}
+              </button>
+            </div>
             {campaignsLoading ? (
               <p className="empty-message">{t('common.loading')}</p>
             ) : campaigns.length > 0 ? (
