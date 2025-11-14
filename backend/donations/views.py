@@ -757,6 +757,8 @@ class DonationViewSet(viewsets.ModelViewSet):
             campaign.save(update_fields=["stripe_ready", "updated_at"])
 
         # Create Stripe Checkout session
+        # Create session on connected account to enable Google Pay and Apple Pay
+        # Payments go directly to the connected account (no transfer_data needed)
         try:
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=["card"],
@@ -780,13 +782,13 @@ class DonationViewSet(viewsets.ModelViewSet):
                     "stripe_account_id": stripe_account.stripe_account_id,
                 },
                 payment_intent_data={
-                    "transfer_data": {
-                        "destination": stripe_account.stripe_account_id,
-                    },
                     "metadata": {
                         "campaign_id": campaign_id,
                     },
                 },
+                # Create checkout session on connected account to enable Google Pay/Apple Pay
+                # This allows the connected account's payment methods (including Google Pay) to be available
+                stripe_account=stripe_account.stripe_account_id,
             )
 
             return Response({"session_id": checkout_session.id, "url": checkout_session.url})
