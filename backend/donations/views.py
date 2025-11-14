@@ -827,33 +827,87 @@ class DonationViewSet(viewsets.ModelViewSet):
             return Response({"error": "session_id required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # First retrieve session to get metadata (this works even for connected account sessions)
-            session = stripe.checkout.Session.retrieve(session_id)
-            metadata = session.metadata or {}
-            campaign_id = int(metadata.get("campaign_id", 0))
+            # Try to get campaign_id from request if provided (helps with connected account sessions)
+            campaign_id = request.data.get("campaign_id")
+            # Convert to int if it's a string
+            if campaign_id and isinstance(campaign_id, str):
+                try:
+                    campaign_id = int(campaign_id)
+                except ValueError:
+                    campaign_id = None
+            session = None
+            metadata = {}
+            campaign = None
 
+            # If campaign_id is provided, use it to get the connected account and retrieve session directly
+            if campaign_id:
+                try:
+                    campaign = Campaign.objects.get(id=campaign_id)
+                    user_account = get_user_stripe_account(campaign.created_by)
+                    stripe_account_id = user_account.stripe_account_id if user_account else None
+
+                    if stripe_account_id:
+                        try:
+                            session = stripe.checkout.Session.retrieve(session_id, stripe_account=stripe_account_id)
+                            metadata = session.metadata or {}
+                            logger.info(f"Retrieved session {session_id} with connected account {stripe_account_id}")
+                        except stripe.error.StripeError as e:
+                            logger.warning(
+                                f"Failed to retrieve session {session_id} with account {stripe_account_id}: {e}"
+                            )
+                            # Fall through to try platform account
+                    else:
+                        # No connected account, try platform account
+                        try:
+                            session = stripe.checkout.Session.retrieve(session_id)
+                            metadata = session.metadata or {}
+                        except stripe.error.StripeError as e:
+                            logger.error(f"Failed to retrieve session {session_id} from platform account: {e}")
+                            raise
+                except Campaign.DoesNotExist:
+                    return Response({"error": "Campaign not found"}, status=status.HTTP_404_NOT_FOUND)
+            else:
+                # No campaign_id provided, try platform account first
+                try:
+                    session = stripe.checkout.Session.retrieve(session_id)
+                    metadata = session.metadata or {}
+                    campaign_id = int(metadata.get("campaign_id", 0))
+
+                    if not campaign_id:
+                        return Response(
+                            {"error": "Invalid session: missing campaign_id. Please provide campaign_id in request."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                except stripe.error.StripeError as e:
+                    # If session doesn't exist on platform account, it's likely on a connected account
+                    if "No such checkout.session" in str(e):
+                        logger.warning(
+                            f"Session {session_id} not found on platform account, likely on connected account"
+                        )
+                        return Response(
+                            {
+                                "error": "Session not found. This session was created on a connected account. Please provide campaign_id in the request.",
+                                "requires_campaign_id": True,
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    else:
+                        raise
+
+            # If we still don't have campaign_id, try to get it from metadata
             if not campaign_id:
-                return Response({"error": "Invalid session: missing campaign_id"}, status=status.HTTP_400_BAD_REQUEST)
+                campaign_id = int(metadata.get("campaign_id", 0))
+                if not campaign_id:
+                    return Response(
+                        {"error": "Invalid session: missing campaign_id"}, status=status.HTTP_400_BAD_REQUEST
+                    )
 
-            # Get the connected account ID from the campaign's creator
-            # This ensures we retrieve the session with the correct account context
-            try:
-                campaign = Campaign.objects.get(id=campaign_id)
-                user_account = get_user_stripe_account(campaign.created_by)
-                stripe_account_id = user_account.stripe_account_id if user_account else None
-
-                # If session was created on a connected account, retrieve it with that context
-                # This ensures we get the correct payment status and details
-                if stripe_account_id:
-                    try:
-                        session = stripe.checkout.Session.retrieve(session_id, stripe_account=stripe_account_id)
-                        logger.info(f"Retrieved session {session_id} with connected account {stripe_account_id}")
-                    except stripe.error.StripeError as e:
-                        logger.warning(f"Failed to retrieve session {session_id} with account {stripe_account_id}: {e}")
-                        # Fall back to platform account retrieval
-                        session = stripe.checkout.Session.retrieve(session_id)
-            except Campaign.DoesNotExist:
-                return Response({"error": "Campaign not found"}, status=status.HTTP_404_NOT_FOUND)
+            # Ensure we have the campaign object (it may have been set in the if block above)
+            if campaign is None:
+                try:
+                    campaign = Campaign.objects.get(id=campaign_id)
+                except Campaign.DoesNotExist:
+                    return Response({"error": "Campaign not found"}, status=status.HTTP_404_NOT_FOUND)
 
             if session.payment_status == "paid":
                 amount = session.amount_total / 100  # Convert from cents

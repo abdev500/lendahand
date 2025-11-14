@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useParams, useSearchParams } from 'react-router-dom'
 import api from '../api/axios'
 import ImageCarousel from '../components/ImageCarousel'
 import './CampaignDetail.css'
@@ -61,8 +61,11 @@ function CampaignDetail() {
 
   const confirmPayment = async (sessionId) => {
     try {
-      console.log('Calling confirm_payment API with session_id:', sessionId)
-      const response = await api.post('/donations/confirm_payment/', { session_id: sessionId })
+      console.log('Calling confirm_payment API with session_id:', sessionId, 'campaign_id:', id)
+      const response = await api.post('/donations/confirm_payment/', {
+        session_id: sessionId,
+        campaign_id: parseInt(id)
+      })
       console.log('Payment confirmation response:', response.data)
       // Refresh campaign and donations after successful payment
       await fetchCampaign()
@@ -104,9 +107,9 @@ function CampaignDetail() {
     } catch (error) {
       console.error('Error creating checkout session:', error)
       const errorMessage = error.response?.data?.error ||
-                          error.response?.data?.detail ||
-                          error.message ||
-                          t('campaign.donation.error', 'Failed to create donation session. Please try again.')
+        error.response?.data?.detail ||
+        error.message ||
+        t('campaign.donation.error', 'Failed to create donation session. Please try again.')
       alert(errorMessage)
       setProcessing(false)
     }
