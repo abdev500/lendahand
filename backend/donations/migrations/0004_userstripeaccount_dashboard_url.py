@@ -2,7 +2,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("donations", "0003_remove_campaign_stripe_account"),
     ]

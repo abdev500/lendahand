@@ -63,4 +63,3 @@ def test_login_with_invalid_credentials_returns_error():
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "error" in response.data
-

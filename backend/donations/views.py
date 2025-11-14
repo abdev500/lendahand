@@ -863,12 +863,13 @@ class DonationViewSet(viewsets.ModelViewSet):
                 # Use session_id as fallback for duplicate detection
                 if not payment_intent:
                     payment_intent = f"session_{session_id}"
-                    logger.warning(f"Confirm payment: No payment_intent found for session {session_id}, using session-based ID")
+                    logger.warning(
+                        f"Confirm payment: No payment_intent found for session {session_id}, using session-based ID"
+                    )
 
                 from decimal import Decimal
 
                 # Campaign was already retrieved above, reuse it
-
                 # Check if donation already exists (prevent duplicates)
                 if Donation.objects.filter(stripe_payment_intent_id=payment_intent).exists():
                     logger.info(f"Donation already exists for payment_intent {payment_intent}")
@@ -899,10 +900,14 @@ class DonationViewSet(viewsets.ModelViewSet):
                 campaign.save()
                 logger.info(f"Updated campaign {campaign_id} current_amount by {amount}")
 
-                logger.info(f"Confirm payment: Donation {donation.id} created for campaign {campaign_id}. Amount: {amount}, Payment Intent: {payment_intent}")
+                logger.info(
+                    f"Confirm payment: Donation {donation.id} created for campaign {campaign_id}. Amount: {amount}, Payment Intent: {payment_intent}"
+                )
                 return Response({"status": "success", "donation": DonationSerializer(donation).data})
             else:
-                logger.warning(f"Confirm payment: Session {session_id} payment_status is '{session.payment_status}', not 'paid'")
+                logger.warning(
+                    f"Confirm payment: Session {session_id} payment_status is '{session.payment_status}', not 'paid'"
+                )
                 return Response(
                     {"error": f"Payment not completed. Status: {session.payment_status}"},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -915,6 +920,7 @@ class DonationViewSet(viewsets.ModelViewSet):
             return Response({"error": "Campaign not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             import traceback
+
             logger.error(f"Confirm payment: Unexpected error for session {session_id}: {e}\n{traceback.format_exc()}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1009,6 +1015,7 @@ def stripe_webhook(request):
                     campaign = Campaign.objects.get(id=campaign_id)
                     all_donations = Donation.objects.filter(campaign=campaign)
                     from decimal import Decimal
+
                     total_donated = sum(Decimal(str(d.amount)) for d in all_donations)
                     if campaign.current_amount != total_donated:
                         campaign.current_amount = total_donated
@@ -1035,7 +1042,9 @@ def stripe_webhook(request):
             # Update campaign amount
             campaign.current_amount = (campaign.current_amount or Decimal("0")) + Decimal(str(amount))
             campaign.save()
-            logger.info(f"Webhook: Donation {donation.id} for campaign {campaign_id} confirmed. Amount: {amount}, Payment Intent: {payment_intent}")
+            logger.info(
+                f"Webhook: Donation {donation.id} for campaign {campaign_id} confirmed. Amount: {amount}, Payment Intent: {payment_intent}"
+            )
 
         except KeyError as e:
             logger.error(f"Webhook error: Missing required field {e} in session data: {session}")
@@ -1048,6 +1057,7 @@ def stripe_webhook(request):
             return Response({"error": "Campaign not found"}, status=404)
         except Exception as e:
             import traceback
+
             logger.error(f"Webhook error processing checkout.session.completed: {e}\n{traceback.format_exc()}")
             return Response({"error": str(e)}, status=500)
     elif event["type"] == "account.updated":
