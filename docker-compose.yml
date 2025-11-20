@@ -81,7 +81,6 @@ services:
       CORS_ALLOWED_ORIGINS: http://localhost:5173
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
-      STRIPE_CLIENT_ID: ${STRIPE_CLIENT_ID:-}
       STRIPE_ONBOARDING_RETURN_URL: ${STRIPE_ONBOARDING_RETURN_URL:-http://localhost:5173/dashboard?stripe_onboarding=complete}
       STRIPE_ONBOARDING_REFRESH_URL: ${STRIPE_ONBOARDING_REFRESH_URL:-http://localhost:5173/dashboard?stripe_onboarding=refresh}
     volumes:

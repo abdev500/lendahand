@@ -124,7 +124,7 @@ The solution is a full-stack web application composed of a Django REST backend a
 - **NewsMedia**: Ordered media assets for news items, mirroring campaign media behaviour.
 
 ## 6. External Integrations & Configuration
-- Stripe keys (`STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_CLIENT_ID`, `STRIPE_WEBHOOK_SECRET`) plus return/refresh URLs must be set per environment.
+- Stripe keys (`STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`) plus return/refresh URLs must be set per environment.
 - Application URLs (`FRONTEND_URL`, `DJANGO_ALLOWED_HOSTS`, `DATABASE_URL`) configured via environment variables or `.env` files.
 - Optional MinIO/S3 variables: `USE_S3_STORAGE`, `AWS_S3_ENDPOINT_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_STORAGE_BUCKET_NAME`, SSL flags.
 - Email delivery for password reset depends on `DEFAULT_FROM_EMAIL` and SMTP settings aligned with Django configuration.

@@ -1156,6 +1156,9 @@ class DonationViewSet(viewsets.ModelViewSet):
                     }
                 ],
                 mode="payment",
+                # Explicitly enable card payment methods - this enables card, Google Pay, and Apple Pay
+                # Google Pay and Apple Pay are considered card-based payment methods in Stripe
+                payment_method_types=["card"],
                 success_url=f"{settings.FRONTEND_URL}/campaign/{campaign_id}?success=true&session_id={{CHECKOUT_SESSION_ID}}",
                 cancel_url=f"{settings.FRONTEND_URL}/campaign/{campaign_id}?canceled=true",
                 metadata={
@@ -1226,15 +1229,45 @@ class DonationViewSet(viewsets.ModelViewSet):
                     stripe_account_id = user_account.stripe_account_id if user_account else None
 
                     if stripe_account_id:
+                        logger.info(
+                            f"Attempting to retrieve session {session_id} from connected account {stripe_account_id}"
+                        )
                         try:
                             session = stripe.checkout.Session.retrieve(session_id, stripe_account=stripe_account_id)
                             metadata = session.metadata or {}
                             logger.info(f"Retrieved session {session_id} with connected account {stripe_account_id}")
                         except stripe.error.StripeError as e:
+                            # Don't fall through to platform account - session doesn't exist there
                             logger.warning(
                                 f"Failed to retrieve session {session_id} with account {stripe_account_id}: {e}"
                             )
-                            # Fall through to try platform account
+
+                            # Check if donation already exists (webhook might have processed it)
+                            payment_intent_fallback = f"session_{session_id}"
+                            existing_donation = Donation.objects.filter(
+                                stripe_payment_intent_id__in=[session_id, payment_intent_fallback]
+                            ).first()
+
+                            if existing_donation:
+                                logger.info(
+                                    f"Donation already exists for session {session_id}, webhook processed it. Donation ID: {existing_donation.id}"
+                                )
+                                # Ensure campaign amount is up to date
+                                recalculate_campaign_amount(existing_donation.campaign)
+                                return Response(
+                                    {
+                                        "status": "success",
+                                        "donation": DonationSerializer(existing_donation).data,
+                                        "note": "Payment was already processed via webhook",
+                                    }
+                                )
+
+                            # Only return error if donation doesn't exist
+                            logger.error(f"Session {session_id} not found and no donation exists. Error: {e}")
+                            return Response(
+                                {"error": f"Session not found on connected account: {str(e)}"},
+                                status=status.HTTP_404_NOT_FOUND,
+                            )
                     else:
                         # No connected account, try platform account
                         try:
@@ -1247,6 +1280,9 @@ class DonationViewSet(viewsets.ModelViewSet):
                     return Response({"error": "Campaign not found"}, status=status.HTTP_404_NOT_FOUND)
             else:
                 # No campaign_id provided, try platform account first
+                logger.info(
+                    f"Attempting to retrieve session {session_id} from platform account (no campaign_id provided)"
+                )
                 try:
                     session = stripe.checkout.Session.retrieve(session_id)
                     metadata = session.metadata or {}
@@ -1263,6 +1299,26 @@ class DonationViewSet(viewsets.ModelViewSet):
                         logger.warning(
                             f"Session {session_id} not found on platform account, likely on connected account"
                         )
+
+                        # Check if donation already exists (webhook might have processed it)
+                        payment_intent_fallback = f"session_{session_id}"
+                        existing_donation = Donation.objects.filter(
+                            stripe_payment_intent_id__in=[session_id, payment_intent_fallback]
+                        ).first()
+
+                        if existing_donation:
+                            logger.info(
+                                f"Donation already exists for session {session_id}, webhook processed it. Donation ID: {existing_donation.id}"
+                            )
+                            recalculate_campaign_amount(existing_donation.campaign)
+                            return Response(
+                                {
+                                    "status": "success",
+                                    "donation": DonationSerializer(existing_donation).data,
+                                    "note": "Payment was already processed via webhook",
+                                }
+                            )
+
                         return Response(
                             {
                                 "error": "Session not found. This session was created on a connected account. Please provide campaign_id in the request.",
@@ -1320,6 +1376,26 @@ class DonationViewSet(viewsets.ModelViewSet):
                 )
         except stripe.error.StripeError as e:
             logger.error(f"Confirm payment: Stripe error for session {session_id}: {e}")
+
+            # Check if donation already exists (webhook might have processed it)
+            payment_intent_fallback = f"session_{session_id}"
+            existing_donation = Donation.objects.filter(
+                stripe_payment_intent_id__in=[session_id, payment_intent_fallback]
+            ).first()
+
+            if existing_donation:
+                logger.info(
+                    f"Donation already exists for session {session_id} despite Stripe error, webhook processed it. Donation ID: {existing_donation.id}"
+                )
+                recalculate_campaign_amount(existing_donation.campaign)
+                return Response(
+                    {
+                        "status": "success",
+                        "donation": DonationSerializer(existing_donation).data,
+                        "note": "Payment was already processed via webhook",
+                    }
+                )
+
             return Response({"error": f"Stripe error: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         except Campaign.DoesNotExist:
             logger.error(f"Confirm payment: Campaign {campaign_id} not found")
