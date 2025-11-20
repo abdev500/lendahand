@@ -2,16 +2,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import (
-    Campaign,
-    CampaignMedia,
-    Donation,
-    ModerationHistory,
-    News,
-    NewsMedia,
-    User,
-    UserStripeAccount,
-)
+from .models import Campaign, CampaignMedia, Donation, ModerationHistory, News, NewsMedia, User, UserStripeAccount
 
 
 class UserSerializer(serializers.ModelSerializer):
