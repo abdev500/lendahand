@@ -17,11 +17,29 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # Configuration from environment variables (set in docker-compose.yml)
-POSTGRES_DB="${DB_NAME:-lendahand}"
-POSTGRES_USER="${DB_USER:-lendahand}"
-POSTGRES_PASSWORD="${DB_PASSWORD:-lendahand}"
-POSTGRES_HOST="${DB_HOST:-db}"
-POSTGRES_PORT="${DB_PORT:-5432}"
+# Parse DATABASE_URL: postgres://user:password@host:port/database
+if [ -z "$DATABASE_URL" ]; then
+    echo -e "${RED}✗ DATABASE_URL environment variable is not set${NC}"
+    exit 1
+fi
+
+# Extract components from DATABASE_URL
+# Remove postgres:// prefix
+DB_URL="${DATABASE_URL#postgres://}"
+# Extract user:password@host:port/database
+DB_CREDENTIALS="${DB_URL%%@*}"
+DB_REST="${DB_URL#*@}"
+# Split user and password
+POSTGRES_USER="${DB_CREDENTIALS%%:*}"
+POSTGRES_PASSWORD="${DB_CREDENTIALS#*:}"
+# Split host:port and database
+DB_HOST_PORT="${DB_REST%%/*}"
+POSTGRES_DB="${DB_REST#*/}"
+# Split host and port
+POSTGRES_HOST="${DB_HOST_PORT%%:*}"
+POSTGRES_PORT="${DB_HOST_PORT#*:}"
+# Default port if not specified
+POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 
 MINIO_ENDPOINT="${AWS_S3_ENDPOINT_URL:-http://minio:9000}"
 MINIO_ACCESS_KEY="${AWS_ACCESS_KEY_ID:-minioadmin}"
@@ -44,7 +62,7 @@ for arg in "$@"; do
             echo ""
             echo "Description:"
             echo "  This script will:"
-            echo "    - Drop and recreate PostgreSQL database: ${POSTGRES_DB}"
+            echo "    - Drop and recreate PostgreSQL database (from DATABASE_URL)"
             echo "    - Delete MinIO bucket: ${MINIO_BUCKET}"
             echo ""
             echo "⚠️  WARNING: This will DELETE ALL DATA!"
