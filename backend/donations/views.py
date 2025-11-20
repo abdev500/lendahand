@@ -43,7 +43,9 @@ def extract_payment_intent_from_session(session, session_id=None):
         payment_intent = session.get("payment_intent") or session.get("payment_intent_id") or None
 
     if not payment_intent:
-        session_id = session_id or (getattr(session, "id", None) or session.get("id", "unknown") if isinstance(session, dict) else "unknown")
+        session_id = session_id or (
+            getattr(session, "id", None) or session.get("id", "unknown") if isinstance(session, dict) else "unknown"
+        )
         payment_intent = f"session_{session_id}"
         logger.warning(f"No payment_intent found, using session-based ID: {payment_intent}")
 
@@ -74,12 +76,14 @@ def create_or_update_donation(campaign, payment_intent_id, amount, log_prefix=""
             "campaign": campaign,
             "amount": amount,
             "is_anonymous": True,
-        }
+        },
     )
 
     updated = False
     if created:
-        logger.info(f"{log_prefix}Created donation {donation.id} for campaign {campaign.id}. Payment Intent: {payment_intent_id}, Amount: {amount}")
+        logger.info(
+            f"{log_prefix}Created donation {donation.id} for campaign {campaign.id}. Payment Intent: {payment_intent_id}, Amount: {amount}"
+        )
     elif donation.amount != amount:
         donation.amount = amount
         donation.save()
@@ -116,10 +120,7 @@ def list_stripe_payment_intents_for_campaign(stripe_account_id, campaign_id):
             list_params["starting_after"] = starting_after
 
         try:
-            pi_list = stripe.PaymentIntent.list(
-                stripe_account=stripe_account_id,
-                **list_params
-            )
+            pi_list = stripe.PaymentIntent.list(stripe_account=stripe_account_id, **list_params)
 
             for pi in pi_list.data:
                 metadata = pi.metadata or {}
@@ -149,10 +150,7 @@ def list_stripe_checkout_sessions_for_campaign(stripe_account_id, campaign_id):
             list_params["starting_after"] = starting_after
 
         try:
-            sessions_list = stripe.checkout.Session.list(
-                stripe_account=stripe_account_id,
-                **list_params
-            )
+            sessions_list = stripe.checkout.Session.list(stripe_account=stripe_account_id, **list_params)
 
             for session in sessions_list.data:
                 metadata = session.metadata or {}
@@ -184,9 +182,7 @@ def process_payment_intents_for_donations(campaign, payment_intents, log_prefix=
         payment_intent_id = pi.id
         amount = Decimal(str(pi.amount / 100))  # Convert from cents
 
-        _, created, updated = create_or_update_donation(
-            campaign, payment_intent_id, amount, log_prefix=log_prefix
-        )
+        _, created, updated = create_or_update_donation(campaign, payment_intent_id, amount, log_prefix=log_prefix)
 
         if created:
             created_count += 1
@@ -213,9 +209,7 @@ def process_checkout_sessions_for_donations(campaign, checkout_sessions, log_pre
         if amount <= 0:
             continue
 
-        _, created, updated = create_or_update_donation(
-            campaign, payment_intent_id, amount, log_prefix=log_prefix
-        )
+        _, created, updated = create_or_update_donation(campaign, payment_intent_id, amount, log_prefix=log_prefix)
 
         if created:
             created_count += 1
@@ -915,20 +909,23 @@ class CampaignViewSet(viewsets.ModelViewSet):
             # Recalculate campaign amount from all donations
             recalculate_campaign_amount(campaign)
             from decimal import Decimal
+
             all_donations = Donation.objects.filter(campaign=campaign)
             total_donated = sum(Decimal(str(d.amount)) for d in all_donations)
 
-            return Response({
-                "status": "success",
-                "campaign_id": campaign.id,
-                "payment_intents_found": len(payment_intents),
-                "sessions_found": len(checkout_sessions),
-                "donations_created": created_count,
-                "donations_updated": updated_count,
-                "total_donations": all_donations.count(),
-                "total_amount": str(total_donated),
-                "campaign": CampaignSerializer(campaign, context={"request": request}).data,
-            })
+            return Response(
+                {
+                    "status": "success",
+                    "campaign_id": campaign.id,
+                    "payment_intents_found": len(payment_intents),
+                    "sessions_found": len(checkout_sessions),
+                    "donations_created": created_count,
+                    "donations_updated": updated_count,
+                    "total_donations": all_donations.count(),
+                    "total_amount": str(total_donated),
+                    "campaign": CampaignSerializer(campaign, context={"request": request}).data,
+                }
+            )
 
         except stripe.error.StripeError as e:
             logger.error(f"Sync payments: Stripe error for campaign {campaign.id}: {e}")
@@ -938,6 +935,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
             )
         except Exception as e:
             import traceback
+
             logger.error(f"Sync payments: Unexpected error for campaign {campaign.id}: {e}\n{traceback.format_exc()}")
             return Response(
                 {"error": str(e)},
@@ -960,10 +958,11 @@ class CampaignViewSet(viewsets.ModelViewSet):
             )
 
         # Get all approved campaigns with Stripe accounts
-        campaigns = Campaign.objects.filter(
-            status="approved",
-            stripe_ready=True
-        ).select_related("created_by").prefetch_related("created_by__stripe_account")
+        campaigns = (
+            Campaign.objects.filter(status="approved", stripe_ready=True)
+            .select_related("created_by")
+            .prefetch_related("created_by__stripe_account")
+        )
 
         results = {
             "total_campaigns": campaigns.count(),
@@ -983,12 +982,14 @@ class CampaignViewSet(viewsets.ModelViewSet):
                 user_account = get_user_stripe_account(campaign.created_by)
                 if not user_account:
                     results["skipped"] += 1
-                    results["campaigns"].append({
-                        "campaign_id": campaign.id,
-                        "campaign_title": campaign.title,
-                        "status": "skipped",
-                        "reason": "No Stripe account",
-                    })
+                    results["campaigns"].append(
+                        {
+                            "campaign_id": campaign.id,
+                            "campaign_title": campaign.title,
+                            "status": "skipped",
+                            "reason": "No Stripe account",
+                        }
+                    )
                     continue
 
                 stripe_account_id = user_account.stripe_account_id
@@ -1011,42 +1012,52 @@ class CampaignViewSet(viewsets.ModelViewSet):
                 # Recalculate campaign amount
                 recalculate_campaign_amount(campaign)
                 from decimal import Decimal
+
                 all_donations = Donation.objects.filter(campaign=campaign)
                 total_donated = sum(Decimal(str(d.amount)) for d in all_donations)
 
                 results["synced"] += 1
                 results["total_donations_created"] += created_count
                 results["total_donations_updated"] += updated_count
-                results["campaigns"].append({
-                    "campaign_id": campaign.id,
-                    "campaign_title": campaign.title,
-                    "status": "success",
-                    "payment_intents_found": len(payment_intents),
-                    "sessions_found": len(checkout_sessions),
-                    "donations_created": created_count,
-                    "donations_updated": updated_count,
-                })
+                results["campaigns"].append(
+                    {
+                        "campaign_id": campaign.id,
+                        "campaign_title": campaign.title,
+                        "status": "success",
+                        "payment_intents_found": len(payment_intents),
+                        "sessions_found": len(checkout_sessions),
+                        "donations_created": created_count,
+                        "donations_updated": updated_count,
+                    }
+                )
 
             except Exception as e:
                 import traceback
+
                 logger.error(f"Bulk sync: Error syncing campaign {campaign.id}: {e}\n{traceback.format_exc()}")
                 results["failed"] += 1
-                results["errors"].append({
-                    "campaign_id": campaign.id,
-                    "campaign_title": campaign.title,
-                    "error": str(e),
-                })
-                results["campaigns"].append({
-                    "campaign_id": campaign.id,
-                    "campaign_title": campaign.title,
-                    "status": "failed",
-                    "error": str(e),
-                })
+                results["errors"].append(
+                    {
+                        "campaign_id": campaign.id,
+                        "campaign_title": campaign.title,
+                        "error": str(e),
+                    }
+                )
+                results["campaigns"].append(
+                    {
+                        "campaign_id": campaign.id,
+                        "campaign_title": campaign.title,
+                        "status": "failed",
+                        "error": str(e),
+                    }
+                )
 
-        return Response({
-            "status": "completed",
-            **results,
-        })
+        return Response(
+            {
+                "status": "completed",
+                **results,
+            }
+        )
 
 
 class DonationViewSet(viewsets.ModelViewSet):
@@ -1290,6 +1301,7 @@ class DonationViewSet(viewsets.ModelViewSet):
                 if created:
                     # New donation created - update campaign amount incrementally
                     from decimal import Decimal
+
                     campaign.current_amount = (campaign.current_amount or Decimal("0")) + Decimal(str(amount))
                     campaign.save()
                     logger.info(f"Confirm payment: Updated campaign {campaign_id} current_amount by {amount}")
@@ -1405,6 +1417,7 @@ def stripe_webhook(request):
             if created:
                 # New donation created - update campaign amount incrementally
                 from decimal import Decimal
+
                 campaign.current_amount = (campaign.current_amount or Decimal("0")) + Decimal(str(amount))
                 campaign.save()
             else:
