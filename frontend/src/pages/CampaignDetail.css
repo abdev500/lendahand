@@ -149,7 +149,7 @@
   color: var(--color-dark-gray);
 }
 
-.campaign-description > div {
+.campaign-description>div {
   word-wrap: break-word;
   overflow-wrap: break-word;
 }

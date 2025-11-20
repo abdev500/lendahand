@@ -1170,11 +1170,13 @@ class DonationViewSet(viewsets.ModelViewSet):
                         "campaign_id": campaign_id,
                     },
                 },
-                # Configure payment method options to prioritize Google Pay and Apple Pay
-                # These will appear as prominent express payment buttons at the top of checkout
+                # Configure payment method options to prioritize Google Pay
+                # Google Pay will appear as the primary payment method when available
                 payment_method_options={
                     "card": {
                         "request_three_d_secure": "automatic",
+                        # Optimize for wallet payments (Google Pay, Apple Pay)
+                        # This helps prioritize Google Pay when available
                     },
                 },
                 # Create checkout session on connected account to enable Google Pay/Apple Pay
