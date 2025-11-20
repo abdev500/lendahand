@@ -1,3 +1,4 @@
+
 # Lend a Hand - Donation Platform
 
 A full-stack donation platform built with Django REST Framework and React.
